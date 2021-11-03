@@ -38,7 +38,14 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	deadline, _ := ctx.Deadline()
 	log.Printf("DEADLINE: %s", deadline)
 
-	return events.APIGatewayProxyResponse{}, nil
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Body:            "Hello world!",
+		IsBase64Encoded: false,
+	}, nil
 
 	// initialize tgbot
 	/*
