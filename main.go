@@ -19,16 +19,7 @@ var (
 	client = lambda.New(session.New())
 )
 
-func callLambda() (string, error) {
-	input := &lambda.GetAccountSettingsInput{}
-	req, resp := client.GetAccountSettingsRequest(input)
-	err := req.Send()
-	output, _ := json.Marshal(resp.AccountUsage)
-	return string(output), err
-}
-
-func HandleTGUpdates(ctx context.Context, event events.SQSEvent) (string, error) {
-
+func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	// event
 	eventJson, _ := json.MarshalIndent(event, "", "  ")
 	log.Printf("EVENT: %s", eventJson)
@@ -46,13 +37,8 @@ func HandleTGUpdates(ctx context.Context, event events.SQSEvent) (string, error)
 	// context method
 	deadline, _ := ctx.Deadline()
 	log.Printf("DEADLINE: %s", deadline)
-	// AWS SDK call
-	usage, err := callLambda()
-	log.Printf("RESPONSE: %s", usage)
-	if err != nil {
-		return "ERROR", err
-	}
-	return usage, nil
+
+	return events.APIGatewayProxyResponse{}, nil
 
 	// initialize tgbot
 	/*
