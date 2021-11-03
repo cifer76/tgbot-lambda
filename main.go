@@ -51,6 +51,7 @@ func HandleTGUpdates(ctx context.Context, event events.SQSEvent) (string, error)
 	if err != nil {
 		return "ERROR", err
 	}
+	log.Printf("RESPONSE: %s", usage)
 	return usage, nil
 
 	// initialize tgbot
