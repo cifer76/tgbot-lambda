@@ -48,10 +48,10 @@ func HandleTGUpdates(ctx context.Context, event events.SQSEvent) (string, error)
 	log.Printf("DEADLINE: %s", deadline)
 	// AWS SDK call
 	usage, err := callLambda()
+	log.Printf("RESPONSE: %s", usage)
 	if err != nil {
 		return "ERROR", err
 	}
-	log.Printf("RESPONSE: %s", usage)
 	return usage, nil
 
 	// initialize tgbot
