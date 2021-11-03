@@ -41,4 +41,4 @@ jobs:
           zip_file: deployment.zip
           memory_size: 128
           timeout: 10
-          handler: hello
+          handler: tgbot
