@@ -40,5 +40,5 @@ jobs:
           function_name: bot
           zip_file: deployment.zip
           memory_size: 128
-          timeout: 10
+          timeout: 30
           handler: tgbot
