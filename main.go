@@ -44,7 +44,10 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	if update.Message != nil { // ignore any non-Message Updates
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 		msg.ReplyToMessageID = update.Message.MessageID
-		bot.Send(msg)
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
 	return events.APIGatewayProxyResponse{
