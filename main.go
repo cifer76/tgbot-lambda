@@ -46,7 +46,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		msg.ReplyToMessageID = update.Message.MessageID
 		_, err := bot.Send(msg)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
 		}
 	}
 
