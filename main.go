@@ -10,7 +10,14 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+)
+
+var (
+	dynsvc *dynamodb.Client
 )
 
 func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -28,6 +35,16 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		return rsp, nil
 	}
 
+	update := &tgbotapi.Update{}
+	if err := json.Unmarshal([]byte(event.Body), update); err != nil {
+		log.Println("Malformed update message")
+		return rsp, nil
+	}
+
+	if update.Message == nil { // ignore any non-Message Updates
+		return rsp, nil
+	}
+
 	// initialize tgbot, we don't use the NewBotAPI() method because it
 	// always makes a getMe call for verification, since we are in the faas
 	// environment, making a getMe call everytime the function get called is
@@ -39,36 +56,23 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		Debug:  true,
 	}
 
-	update := tgbotapi.Update{}
-	if err := json.Unmarshal([]byte(event.Body), &update); err != nil {
-		log.Println("Malformed update message")
+	// Initialize dynamodb client
+	// Using the SDK's default configuration, loading additional config
+	// and credentials values from the environment variables, shared
+	// credentials, and shared configuration files
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(os.Getenv("AWS_REGION")))
+	if err != nil {
+		log.Printf("unable to load SDK config, %v\n", err)
 		return rsp, nil
 	}
 
-	if update.Message != nil { // ignore any non-Message Updates
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
-		_, err := bot.Send(msg)
-		if err != nil {
-			log.Println(err)
-		}
-	}
+	// Using the Config value, create the DynamoDB client
+	dynsvc = dynamodb.NewFromConfig(cfg)
 
-	return events.APIGatewayProxyResponse{
-		StatusCode: 200,
-	}, nil
+	h := getHandler(ctx, update)
+	go h(ctx, update, bot)
 
-	/*
-		for update := range updates {
-			if update.Message == nil { // ignore any non-Message Updates
-				continue
-			}
-
-			log.Printf("%+v\n", update)
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		}
-
-	*/
+	return rsp, nil
 }
 
 func main() {
