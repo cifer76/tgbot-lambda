@@ -14,15 +14,18 @@ import (
 )
 
 func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	rsp := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+	}
+
 	// event
-	eventJson, _ := json.MarshalIndent(event, "", "  ")
+	eventJson, _ := json.Marshal(event)
 	log.Printf("EVENT: %s", eventJson)
-	// environment variables
-	log.Printf("REGION: %s", os.Getenv("AWS_REGION"))
 
 	botToken := os.Getenv("BOT_TOKEN")
 	if botToken == "" {
-		log.Fatalln("environment BOT_TOKEN empty!")
+		log.Println("environment BOT_TOKEN empty!")
+		return rsp, nil
 	}
 
 	// initialize tgbot, we don't use the NewBotAPI() method because it
@@ -38,7 +41,8 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 
 	update := tgbotapi.Update{}
 	if err := json.Unmarshal([]byte(event.Body), &update); err != nil {
-		log.Fatalln("Malformed update message")
+		log.Println("Malformed update message")
+		return rsp, nil
 	}
 
 	if update.Message != nil { // ignore any non-Message Updates
