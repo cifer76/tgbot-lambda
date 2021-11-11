@@ -55,7 +55,7 @@ func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi
 		}
 	}()
 
-	if !strings.HasPrefix(groupLink, "https://t.me/") || !strings.HasPrefix(groupLink, "t.me/") {
+	if !strings.HasPrefix(groupLink, "https://t.me/") && !strings.HasPrefix(groupLink, "t.me/") {
 		msg.Text = "Invalid group link, the link must start with https://t.me/ or at least t.me/"
 		return
 	}
