@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -72,26 +73,23 @@ func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi
 
 	// query group info
 	chat, err := bot.GetChat(tgbotapi.ChatConfig{
-		SuperGroupUsername: groupUsername,
+		SuperGroupUsername: "@" + groupUsername, // must be proceeded with @, refer to: https://core.telegram.org/bots/api#getchat
 	})
 	if err != nil {
-		log.Println(err)
+		log.Printf("getChat for %s error: %v\n", groupUsername, err)
 		msg.Text = "index failed, please try again later"
 		return
 	}
 
-	if chat.IsPrivate() {
-		msg.Text = "index failed, private chats are not supported"
-		return
-	}
-
-	log.Printf("Group info:\nname: %s\ntype: %s\nphoto: %s\ndescription: %s\n", chat.Title, chat.Type, chat.Photo, chat.Description)
+	log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\nphoto: %s\ndescription: %s\n",
+		chat.ID, chat.Title, chat.Type, chat.Photo, chat.Description)
 
 	// index the group to persistent storage
 	_, err = dynsvc.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String("groups"),
 		Item: map[string]types.AttributeValue{
 			"username": &types.AttributeValueMemberS{Value: chat.UserName},
+			"chat_id":  &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
 		},
 	})
 	if err != nil {
