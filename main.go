@@ -70,7 +70,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	dynsvc = dynamodb.NewFromConfig(cfg)
 
 	h := getHandler(ctx, update)
-	go h(ctx, update, bot)
+	h(ctx, update, bot)
 
 	return rsp, nil
 }
