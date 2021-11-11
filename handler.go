@@ -61,10 +61,10 @@ func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi
 	}
 
 	// extract the group username
-	groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+6:])
+	groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+5:])
 
 	// check username validity, telegram allows only letters, numbers and underscore characters in username
-	pattern := regexp.MustCompile(`^[a-zA-Z]+[0-9_]+$`)
+	pattern := regexp.MustCompile(`^[a-zA-Z]+[0-9_a-zA-Z]+$`)
 	if !pattern.MatchString(groupUsername) {
 		msg.Text = "group username in the link invalid, must start with letters and contain only letters, numbers and underscore"
 		return
