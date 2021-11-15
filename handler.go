@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -85,13 +86,34 @@ func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi
 		chat.ID, chat.Title, chat.Type, chat.Description)
 
 	// index the group to persistent storage
-	_, err = dynsvc.PutItem(ctx, &dynamodb.PutItemInput{
+	/*
+		_, err = dynsvc.PutItem(ctx, &dynamodb.PutItemInput{
+			TableName: aws.String("groups"),
+			Item: map[string]types.AttributeValue{
+				"username":    &types.AttributeValueMemberS{Value: chat.UserName},
+				"title":       &types.AttributeValueMemberS{Value: chat.Title},
+				"description": &types.AttributeValueMemberS{Value: chat.Description},
+				"chat_id":     &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
+				"created_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
+				"update_at":   &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
+			},
+		})
+	*/
+	_, err = dynsvc.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String("groups"),
-		Item: map[string]types.AttributeValue{
+		Key: map[string]types.AttributeValue{
 			"username": &types.AttributeValueMemberS{Value: chat.UserName},
-			"chat_id":  &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
+		},
+		UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, update_at := :update_at, created_at = if_not_exists(created_at, :created_at)"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":title":       &types.AttributeValueMemberS{Value: chat.Title},
+			":description": &types.AttributeValueMemberS{Value: chat.Description},
+			":chat_id":     &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
+			":created_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
+			":update_at":   &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
 		},
 	})
+
 	if err != nil {
 		log.Printf("index %s error: %v\n", chat.UserName, err)
 		msg.Text = "index failed, please try again later"
