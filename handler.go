@@ -104,7 +104,7 @@ func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi
 		Key: map[string]types.AttributeValue{
 			"username": &types.AttributeValueMemberS{Value: chat.UserName},
 		},
-		UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, update_at := :update_at, created_at = if_not_exists(created_at, :created_at)"),
+		UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":title":       &types.AttributeValueMemberS{Value: chat.Title},
 			":description": &types.AttributeValueMemberS{Value: chat.Description},
