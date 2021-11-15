@@ -40,3 +40,7 @@
     sendMessage resp: {"ok":false,"error_code":400,"description":"Bad Request: message text is empty"}
     ```
     And the `log.Fatalln(err)` causes the handling process exits before sending 200 OK to telegram bot API. The fix for it is fairly simple, just substitute the `log.Fatalln()` with `log.Println()`.
+
+2. Lambda is unable to call dynamoDB due to the lack of permissions
+
+   Follow [this](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_lambda-access-dynamodb.html) to grant permissions to lambda.

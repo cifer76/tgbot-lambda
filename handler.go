@@ -77,12 +77,12 @@ func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi
 	})
 	if err != nil {
 		log.Printf("getChat for %s error: %v\n", groupUsername, err)
-		msg.Text = "index failed, please try again later"
+		msg.Text = "can't find the group you provided, please check your group username"
 		return
 	}
 
-	log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\nphoto: %s\ndescription: %s\n",
-		chat.ID, chat.Title, chat.Type, chat.Photo, chat.Description)
+	log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
+		chat.ID, chat.Title, chat.Type, chat.Description)
 
 	// index the group to persistent storage
 	_, err = dynsvc.PutItem(ctx, &dynamodb.PutItemInput{
