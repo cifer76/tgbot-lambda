@@ -13,12 +13,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
+	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var (
 	dynsvc *dynamodb.Client
 	bot    *tgbotapi.BotAPI
+	rdb    *redis.Client
 )
 
 func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -41,7 +43,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	}
 
 	h := getHandler(ctx, update)
-	h(ctx, update, bot)
+	h(ctx, update)
 
 	return rsp, nil
 }
@@ -77,4 +79,10 @@ func init() {
 		Buffer: 100,
 		Debug:  true,
 	}
+
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     "tgbot-001.3pmgxw.0001.ape1.cache.amazonaws.com:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 }

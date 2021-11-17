@@ -4,33 +4,52 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-type Handler func(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi.BotAPI)
+const (
+	commandRequestIndex = "r"
+)
+
+type CommandState struct {
+	ChatID  int64  `json:"chatID"` // who is initiating the command?
+	Command string `json:"command"`
+
+	RequestIndexState *RequestIndexState `json:"requestIndexState"`
+}
+
+type GroupInfo struct {
+	Chat tgbotapi.Chat `json:"chat"` // the chat structure
+
+	Category string   `json:"category"` // group category specified by the requestor
+	Tags     []string `json:"tags"`     // group tags specified by the requestor
+}
+
+type RequestIndexState struct {
+	Group   *GroupInfo `json:"group"`   // the basic info of the group being requested index
+	Current int        `json:"current"` // current stage
+	Next    int        `json:"next"`    // next stage
+}
+
+type Handler func(ctx context.Context, update *tgbotapi.Update)
 
 func getHandler(ctx context.Context, update *tgbotapi.Update) Handler {
 	if !update.Message.IsCommand() {
-		return handleGroupLink
+		return handleText
 	}
 
 	switch update.Message.Command() {
-	case "start", "help":
+	case "start", "help", "h":
 		return handleStart
+	case "r":
+		return handleRequestIndex
 	default:
 		return handleUnknownCommand
 	}
 }
 
-func handleStart(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
+func handleStart(ctx context.Context, update *tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Send your group link to request index it")
 	_, err := bot.Send(msg)
 	if err != nil {
@@ -38,7 +57,7 @@ func handleStart(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi.Bot
 	}
 }
 
-func handleUnknownCommand(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
+func handleUnknownCommand(ctx context.Context, update *tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command")
 	_, err := bot.Send(msg)
 	if err != nil {
@@ -46,79 +65,142 @@ func handleUnknownCommand(ctx context.Context, update *tgbotapi.Update, bot *tgb
 	}
 }
 
-func handleGroupLink(ctx context.Context, update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
+func handleRequestIndex(ctx context.Context, update *tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-	groupLink := update.Message.Text
 
-	defer func() {
+	state := &CommandState{
+		ChatID:  update.Message.Chat.ID,
+		Command: update.Message.Command(),
+		RequestIndexState: &RequestIndexState{
+			Next: GroupLinkReceived,
+		},
+	}
+
+	// write the state machine, overwrite the previous one if exists
+	writeState(ctx, state)
+
+	msg.Text = "please input your group link"
+	_, err := bot.Send(msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	/*
+		tokens := strings.Fields(update.Message.Text)
+		tokens = tokens[1:] // index 0 is the command string
+
+		for i, t := range tokens {
+			switch state.Next {
+			case GroupLinkReceived:
+				if err := handleRIGroupLink(ctx, state, t); err != nil {
+					msg.Text = err.Error()
+					return
+				}
+				state.Next = CategoryReceived
+			case CategoryReceived:
+				if err := handleRIGroupCategory(ctx, state, t); err != nil {
+					msg.Text = err.Error()
+					return
+				}
+				state.Next = TagsReceived
+			case TagsReceived:
+				if err := handleRIGroupTags(ctx, state, tokens[i:]); err != nil {
+					msg.Text = err.Error()
+					return
+				}
+				state.Next = Done
+				break
+			}
+		}
+
+		if (len(tokens)) < 1 {
+			state.Next = GroupLinkReceived
+			msg.Text = "please input your group link"
+			return
+		}
+
+		groupLink := tokens[1]
+		if !strings.HasPrefix(groupLink, "https://t.me/") && !strings.HasPrefix(groupLink, "t.me/") {
+			state.Next = GroupLinkReceived
+			msg.Text = "Invalid group link, the link must start with https://t.me/ or t.me/, please re-enter"
+			return
+		}
+
+		// extract the group username
+		groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+5:])
+
+		// check username validity, telegram allows only letters, numbers and underscore characters in username
+		pattern := regexp.MustCompile(`^[a-zA-Z]+[0-9_a-zA-Z]+$`)
+		if !pattern.MatchString(groupUsername) {
+			state.Next = GroupLinkReceived
+			msg.Text = "group username in the link invalid, must start with letters and contain only letters, numbers and underscore, please re-enter"
+			return
+		}
+
+		// query group info
+		chat, err := bot.GetChat(tgbotapi.ChatConfig{
+			SuperGroupUsername: "@" + groupUsername, // must be proceeded with @, refer to: https://core.telegram.org/bots/api#getchat
+		})
+		if err != nil {
+			log.Printf("getChat for %s error: %v\n", groupUsername, err)
+			state.Next = GroupLinkReceived
+			msg.Text = "can't find the group you provided, please check your group username and re-enter"
+			return
+		}
+
+		state.Chat = chat
+		state.Current = GroupLinkReceived
+
+		if (len(tokens)) < 1 {
+			state.Next = GroupLinkReceived
+			msg.Text = "please input your group link"
+			return
+		}
+
+		state.Next = CategoryReceived
+	*/
+
+}
+
+func handleText(ctx context.Context, update *tgbotapi.Update) {
+	chatID := update.Message.Chat.ID
+	msg := tgbotapi.NewMessage(chatID, "")
+
+	state, err := getState(ctx, chatID)
+	if err != nil { // redis error, log the error then do nothing, the user will receive no reply
+		log.Println(err)
+		return
+	}
+
+	// not in a command context
+	if state == nil {
+		// take this as search case
+
+		// TODO handle search, search from dynamodb (or from other search engines)
+		// construct the search results
+
 		_, err := bot.Send(msg)
 		if err != nil {
 			log.Println(err)
 		}
-	}()
 
-	if !strings.HasPrefix(groupLink, "https://t.me/") && !strings.HasPrefix(groupLink, "t.me/") {
-		msg.Text = "Invalid group link, the link must start with https://t.me/ or at least t.me/"
 		return
 	}
 
-	// extract the group username
-	groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+5:])
-
-	// check username validity, telegram allows only letters, numbers and underscore characters in username
-	pattern := regexp.MustCompile(`^[a-zA-Z]+[0-9_a-zA-Z]+$`)
-	if !pattern.MatchString(groupUsername) {
-		msg.Text = "group username in the link invalid, must start with letters and contain only letters, numbers and underscore"
-		return
+	if h, ok := commandStateHandler[state.Command]; ok {
+		reply, err := h(ctx, state, update)
+		if err == nil {
+			writeState(ctx, state)
+			msg.Text = reply
+		} else {
+			msg.Text = err.Error()
+		}
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		fmt.Printf("wrong state: %v\n", state)
 	}
-
-	// query group info
-	chat, err := bot.GetChat(tgbotapi.ChatConfig{
-		SuperGroupUsername: "@" + groupUsername, // must be proceeded with @, refer to: https://core.telegram.org/bots/api#getchat
-	})
-	if err != nil {
-		log.Printf("getChat for %s error: %v\n", groupUsername, err)
-		msg.Text = "can't find the group you provided, please check your group username"
-		return
-	}
-
-	log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
-		chat.ID, chat.Title, chat.Type, chat.Description)
-
-	// index the group to persistent storage
-	/*
-		_, err = dynsvc.PutItem(ctx, &dynamodb.PutItemInput{
-			TableName: aws.String("groups"),
-			Item: map[string]types.AttributeValue{
-				"username":    &types.AttributeValueMemberS{Value: chat.UserName},
-				"title":       &types.AttributeValueMemberS{Value: chat.Title},
-				"description": &types.AttributeValueMemberS{Value: chat.Description},
-				"chat_id":     &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
-				"created_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
-				"update_at":   &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
-			},
-		})
-	*/
-	_, err = dynsvc.UpdateItem(ctx, &dynamodb.UpdateItemInput{
-		TableName: aws.String("groups"),
-		Key: map[string]types.AttributeValue{
-			"username": &types.AttributeValueMemberS{Value: chat.UserName},
-		},
-		UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":title":      &types.AttributeValueMemberS{Value: chat.Title},
-			":desc":       &types.AttributeValueMemberS{Value: chat.Description},
-			":chat_id":    &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
-			":created_at": &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
-			":update_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
-		},
-	})
-
-	if err != nil {
-		log.Printf("index %s error: %v\n", chat.UserName, err)
-		msg.Text = "index failed, please try again later"
-		return
-	}
-
-	msg.Text = fmt.Sprintf("Group %s has been indexed", chat.Title)
 }
