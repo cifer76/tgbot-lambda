@@ -20,16 +20,17 @@ type CommandState struct {
 }
 
 type GroupInfo struct {
-	Chat tgbotapi.Chat `json:"chat"` // the chat structure
+	tgbotapi.Chat
 
 	Category string   `json:"category"` // group category specified by the requestor
 	Tags     []string `json:"tags"`     // group tags specified by the requestor
 }
 
 type RequestIndexState struct {
-	Group   *GroupInfo `json:"group"`   // the basic info of the group being requested index
-	Current int        `json:"current"` // current stage
-	Next    int        `json:"next"`    // next stage
+	Group *GroupInfo `json:"group"` // the basic info of the group being requested index
+
+	Current int `json:"current"` // current stage
+	Next    int `json:"next"`    // next stage
 }
 
 type Handler func(ctx context.Context, update *tgbotapi.Update)
@@ -72,7 +73,8 @@ func handleRequestIndex(ctx context.Context, update *tgbotapi.Update) {
 		ChatID:  update.Message.Chat.ID,
 		Command: update.Message.Command(),
 		RequestIndexState: &RequestIndexState{
-			Next: GroupLinkReceived,
+			Group: &GroupInfo{},
+			Next:  GroupLinkReceived,
 		},
 	}
 
