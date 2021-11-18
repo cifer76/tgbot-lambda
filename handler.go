@@ -77,7 +77,10 @@ func handleRequestIndex(ctx context.Context, update *tgbotapi.Update) {
 	}
 
 	// write the state machine, overwrite the previous one if exists
-	writeState(ctx, state)
+	if err := writeState(ctx, state); err != nil {
+		log.Println(err)
+		return
+	}
 
 	msg.Text = "please input your group link"
 	_, err := bot.Send(msg)
@@ -180,6 +183,7 @@ func handleText(ctx context.Context, update *tgbotapi.Update) {
 		// TODO handle search, search from dynamodb (or from other search engines)
 		// construct the search results
 
+		msg.Text = "search function is under development"
 		_, err := bot.Send(msg)
 		if err != nil {
 			log.Println(err)
