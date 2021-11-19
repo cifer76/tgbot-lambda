@@ -26,14 +26,14 @@ func getHandler(ctx context.Context, update *tgbotapi.Update) Handler {
 func handleStart(ctx context.Context, update *tgbotapi.Update) {
 	content := `Welcome!
 
-    Input any keyword to search for the related groups.
+Input any keyword to search for the related groups.
 
-    or choose a command following suit your needs:
+or choose a command following suit your needs:
 
-    /start   - show this information
-    /request - request me to index/re-index a group
-    /list    - list the indexed groups, maybe by categories
-    `
+/start   - show this information
+/request - request me to index/re-index a group
+/list    - list the indexed groups, maybe by categories
+`
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
 	_, err := bot.Send(msg)

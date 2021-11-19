@@ -139,7 +139,7 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 					Key: map[string]types.AttributeValue{
 						"tag": &types.AttributeValueMemberS{Value: tag},
 					},
-					UpdateExpression: aws.String("add groups :group)"),
+					UpdateExpression: aws.String("add groups :group"),
 					ExpressionAttributeValues: map[string]types.AttributeValue{
 						":group": &types.AttributeValueMemberSS{Value: []string{cs.UserName}},
 					},
@@ -158,7 +158,7 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 					Key: map[string]types.AttributeValue{
 						"tag": &types.AttributeValueMemberS{Value: tag},
 					},
-					UpdateExpression: aws.String("delete groups :group)"),
+					UpdateExpression: aws.String("delete groups :group"),
 					ExpressionAttributeValues: map[string]types.AttributeValue{
 						":group": &types.AttributeValueMemberSS{Value: []string{cs.UserName}},
 					},
