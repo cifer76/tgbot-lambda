@@ -167,7 +167,7 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	keys = []map[string]types.AttributeValue{}
 	for _, kv := range ss {
 		keys = append(keys, map[string]types.AttributeValue{
-			"usernmae": &types.AttributeValueMemberS{Value: kv.k},
+			"username": &types.AttributeValueMemberS{Value: kv.k},
 		})
 	}
 

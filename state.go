@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"strconv"
 	"time"
 
@@ -25,6 +26,8 @@ func getState(ctx context.Context, chatID int64) (*CommandState, error) {
 		return nil, err
 	}
 
+	log.Printf("getState: %v\n", output)
+
 	state := &CommandState{}
 	_ = json.Unmarshal([]byte(output), state)
 	return state, nil
@@ -34,6 +37,9 @@ func writeState(ctx context.Context, state *CommandState) error {
 	key := stateKey + strconv.FormatInt(state.ChatID, 10)
 
 	bytes, _ := json.Marshal(state)
+
+	log.Printf("writeState: %v\n", string(bytes))
+
 	_, err := rdb.Set(ctx, key, bytes, expireDuration).Result()
 	if err != nil {
 		return err
@@ -44,7 +50,8 @@ func writeState(ctx context.Context, state *CommandState) error {
 
 func clearState(ctx context.Context, chatID int64) error {
 	key := stateKey + strconv.FormatInt(chatID, 10)
-	_, err := rdb.Set(ctx, key, nil, 0).Result()
+	log.Printf("clearState: %v\n", key)
+	_, err := rdb.Expire(ctx, key, 0).Result()
 	if err != nil {
 		return err
 	}
