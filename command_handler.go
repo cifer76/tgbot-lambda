@@ -82,13 +82,15 @@ func commandRequestIndexHandler(ctx context.Context, state *CommandState, update
 			Key: map[string]types.AttributeValue{
 				"username": &types.AttributeValueMemberS{Value: chat.UserName},
 			},
-			UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
+			UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, category = :category, tags = :tags, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":title":      &types.AttributeValueMemberS{Value: chat.Title},
 				":desc":       &types.AttributeValueMemberS{Value: chat.Description},
 				":chat_id":    &types.AttributeValueMemberN{Value: strconv.FormatInt(chat.ID, 10)},
 				":created_at": &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
 				":update_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
+				":category":   &types.AttributeValueMemberS{Value: group.Category},
+				":tags":       &types.AttributeValueMemberSS{Value: group.Tags},
 			},
 		})
 
