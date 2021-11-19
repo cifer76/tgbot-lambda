@@ -2,8 +2,9 @@
 
 # Todo
 
-[ ] Support searching for groups by keyword
-[ ] group groups by tags and categories
+[x] Support searching for groups by keyword
+[x] group groups by tags and categories
+[ ] rate the group periodically, then sort them during search recalling
 
 # Set up webhook
 

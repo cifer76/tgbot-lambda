@@ -31,7 +31,17 @@ var (
 	stateHandler = map[string]StateHandler{
 		"request": requestIndexStateHandler,
 	}
+
+	patternGroupUsername *regexp.Regexp // group username must be only letters, numbers and underscore
+	patternGroupTag      *regexp.Regexp // group tag can be CJK characters and english letters
+	patternGroupCategory *regexp.Regexp // group category can be CJK characters and english letters
 )
+
+func init() {
+	patternGroupUsername = regexp.MustCompile(`^[a-zA-Z]+[0-9_a-zA-Z]+$`)
+	patternGroupTag = regexp.MustCompile(`^[\u4e00-\u9fa5a-zA-Z0-9]+$`)
+	patternGroupCategory = regexp.MustCompile(`^[\u4e00-\u9fa5a-zA-Z0-9]+$`)
+}
 
 func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *CommandState) (string, error) {
 	defer func() {
@@ -51,8 +61,7 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 		// extract the group username
 		groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+5:])
 		// check username validity, telegram allows only letters, numbers and underscore characters in username
-		pattern := regexp.MustCompile(`^[a-zA-Z]+[0-9_a-zA-Z]+$`)
-		if !pattern.MatchString(groupUsername) {
+		if !patternGroupUsername.MatchString(groupUsername) {
 			return "", fmt.Errorf("group username in the link invalid, must start with letters and contain only letters, numbers and underscore")
 		}
 		// query group info
@@ -70,16 +79,34 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 			chat.ID, chat.Title, chat.Type, chat.Description)
 		return "please input your group category", nil
 	case CategoryReceived:
-		// TODO do some validation of the category
 		// TODO provide a virtual keyword to let the user choose the category
+
+		// do some validation of the category
 		category := update.Message.Text
+		if !patternGroupCategory.MatchString(category) {
+			return "category invalid, please re-input", nil
+		}
+
 		cs.Category = category
 		cs.Next = TagsReceived
 		return "please input your group tags, separated by space", nil
 	case TagsReceived:
-		// TODO do some validation of the tags
-		// support up to 3 tags for each group
 		tags := strings.Fields(update.Message.Text)
+
+		// do some validation of the tags
+		filtered := []string{}
+		for _, t := range tags {
+			if patternGroupTag.MatchString(t) {
+				filtered = append(filtered, t)
+			}
+		}
+		tags = filtered
+
+		// support up to 3 tags for each group
+		if len(tags) > 3 {
+			tags = tags[:3]
+		}
+
 		cs.Tags = tags
 
 		// write group info
