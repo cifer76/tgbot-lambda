@@ -38,9 +38,9 @@ var (
 )
 
 func init() {
-	patternGroupUsername = regexp.MustCompile(`^[a-zA-Z]+[0-9_a-zA-Z]+$`)
-	patternGroupTag = regexp.MustCompile(`^[\u4e00-\u9fa5a-zA-Z0-9]+$`)
-	patternGroupCategory = regexp.MustCompile(`^[\u4e00-\u9fa5a-zA-Z0-9]+$`)
+	patternGroupUsername = regexp.MustCompile("^[a-zA-Z]+[0-9_a-zA-Z]+$")
+	patternGroupTag = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
+	patternGroupCategory = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
 }
 
 func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *CommandState) (string, error) {
