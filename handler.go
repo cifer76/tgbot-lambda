@@ -194,10 +194,10 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	rsp := `
 Found the following groups:
 
-    `
+`
 
 	for i, g := range groups {
-		line := fmt.Sprintf("%d. [%s](https://t.me/@%s)\n", i, g.Title, g.Username)
+		line := fmt.Sprintf("%d. [%s](https://t.me/%s) - %s\n", i+1, g.Title, g.Username, g.Description)
 		rsp += line
 	}
 	return rsp
