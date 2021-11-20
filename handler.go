@@ -73,7 +73,7 @@ func handleRequestIndex(ctx context.Context, update *tgbotapi.Update) {
 func handleText(ctx context.Context, update *tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	msg := tgbotapi.NewMessage(chatID, "")
-	msg.ParseMode = tgbotapi.ModeMarkdown
+	msg.ParseMode = tgbotapi.ModeHTML
 
 	state, err := getState(ctx, chatID)
 	if err != nil { // redis error, log the error then do nothing, the user will receive no reply
@@ -197,7 +197,7 @@ Found the following groups:
 `
 
 	for i, g := range groups {
-		line := fmt.Sprintf("%d. [%s](https://t.me/%s) - <pre>%s</pre>\n", i+1, g.Title, g.Username, g.Description)
+		line := fmt.Sprintf("%d. <a href=\"https://t.me/%s\">%s</a> <small>%s</small>\n", i+1, g.Username, g.Title, g.Description)
 		rsp += line
 	}
 	return rsp
