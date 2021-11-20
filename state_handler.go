@@ -100,6 +100,7 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
 			chat.ID, chat.Title, chat.Type, chat.Description)
 
+		msg.Text = "please choose the topic most relevant to your group:"
 		msg.ReplyMarkup = categoryKeyboard
 
 		return "please input your group category", nil
@@ -114,6 +115,7 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 
 		cs.Category = category
 		cs.Next = TagsReceived
+		msg.Text = "please input your group tags, separated by space"
 		return "please input your group tags, separated by space", nil
 	case TagsReceived:
 		tags := strings.Fields(update.Message.Text)
@@ -223,7 +225,8 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 		}
 		wg.Wait()
 		cs.Next = Done
-		return fmt.Sprintf("Group %s has been indexed", cs.Title), nil
+		msg.Text = fmt.Sprintf("Group %s has been indexed", cs.Title)
+		return "", nil
 	default:
 		return "", nil
 	}

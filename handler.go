@@ -173,6 +173,10 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 		})
 	}
 
+	if len(keys) < 1 {
+		return "no results found"
+	}
+
 	// batch get groups by group usernames
 	out, err = dynsvc.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
 		RequestItems: map[string]types.KeysAndAttributes{
