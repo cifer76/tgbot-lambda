@@ -192,12 +192,16 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	}
 
 	rsp := `
-Found the following groups:
+Found the following results:
 
 `
 
 	for i, g := range groups {
-		line := fmt.Sprintf("%d. <a href=\"https://t.me/%s\">%s</a> <small>%s</small>\n", i+1, g.Username, g.Title, g.Description)
+		icon := "👥"
+		if g.Type == "channel" {
+			icon = "📢"
+		}
+		line := fmt.Sprintf("%d. %s <a href=\"https://t.me/%s\">%s</a> <pre>%s</pre>\n", i+1, icon, g.Username, g.Title, g.Description)
 		rsp += line
 	}
 	return rsp

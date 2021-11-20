@@ -116,9 +116,10 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 				"username": &types.AttributeValueMemberS{Value: cs.UserName},
 			},
 			ReturnValues:     types.ReturnValueUpdatedOld,
-			UpdateExpression: aws.String("set title = :title, description = :desc, chat_id = :chat_id, category = :category, tags = :tags, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
+			UpdateExpression: aws.String("set title = :title, type = :type, description = :desc, chat_id = :chat_id, category = :category, tags = :tags, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
 			ExpressionAttributeValues: map[string]types.AttributeValue{
 				":title":      &types.AttributeValueMemberS{Value: cs.Title},
+				":type":       &types.AttributeValueMemberS{Value: cs.Type},
 				":desc":       &types.AttributeValueMemberS{Value: cs.Description},
 				":chat_id":    &types.AttributeValueMemberN{Value: strconv.FormatInt(cs.ID, 10)},
 				":created_at": &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},

@@ -25,6 +25,7 @@ type GroupRecord struct {
 	Username    string
 	ChatID      int64
 	Title       string
+	Type        string
 	Description string
 	Category    string   `json:"category"` // group category specified by the requestor
 	Tags        []string `json:"tags"`     // group tags specified by the requestor
