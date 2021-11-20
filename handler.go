@@ -100,10 +100,12 @@ func handleText(ctx context.Context, update *tgbotapi.Update) {
 		if err != nil {
 			msg.Text = err.Error()
 		}
-		_, err = bot.Send(msg)
-		if err != nil {
-			log.Println(err)
-		}
+		/*
+			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
+		*/
 	} else {
 		fmt.Printf("wrong state: %v\n", state)
 	}

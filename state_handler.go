@@ -35,6 +35,19 @@ var (
 	patternGroupUsername *regexp.Regexp // group username must be only letters, numbers and underscore
 	patternGroupTag      *regexp.Regexp // group tag can be CJK characters and english letters
 	patternGroupCategory *regexp.Regexp // group category can be CJK characters and english letters
+
+	categoryKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Programming", "Programming"),
+			tgbotapi.NewInlineKeyboardButtonData("Politics", "Politics"),
+			tgbotapi.NewInlineKeyboardButtonData("Cryptocurrencies", "Cryptocurrencies"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Mathematics", "Mathematics"),
+			tgbotapi.NewInlineKeyboardButtonData("Finance", "Finance"),
+			tgbotapi.NewInlineKeyboardButtonData("Economics", "Economics"),
+		),
+	)
 )
 
 func init() {
@@ -44,7 +57,16 @@ func init() {
 }
 
 func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *CommandState) (string, error) {
+	chatID := update.Message.Chat.ID
+	msg := tgbotapi.NewMessage(chatID, "")
+	msg.ParseMode = tgbotapi.ModeHTML
+
 	defer func() {
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
+
 		if cs.Next == Done {
 			clearState(ctx, cs.ChatID)
 		} else {
@@ -77,6 +99,9 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
 			chat.ID, chat.Title, chat.Type, chat.Description)
+
+		msg.ReplyMarkup = categoryKeyboard
+
 		return "please input your group category", nil
 	case CategoryReceived:
 		// TODO provide a virtual keyword to let the user choose the category
