@@ -15,39 +15,6 @@ import (
 
 type Handler func(ctx context.Context, update *tgbotapi.Update)
 
-func handleText(ctx context.Context, update *tgbotapi.Update) {
-	chatID := update.Message.Chat.ID
-	msg := tgbotapi.NewMessage(chatID, "")
-	msg.ParseMode = tgbotapi.ModeHTML
-
-	state, err := getState(ctx, chatID)
-	if err != nil { // redis error, log the error then do nothing, the user will receive no reply
-		log.Println(err)
-		return
-	}
-
-	// not in a command context
-	if state == nil {
-		// take this as search case
-		msg.Text = handleSearch(ctx, update)
-		_, err := bot.Send(msg)
-		if err != nil {
-			log.Println(err)
-		}
-
-		return
-	}
-
-	// in a command's context
-	h, ok := stateHandler[state.Command]
-	if !ok {
-		fmt.Println("wrong state", state)
-		return
-	}
-
-	h(ctx, update, state)
-}
-
 func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	tokens := strings.Fields(update.Message.Text)
 

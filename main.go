@@ -29,7 +29,6 @@ or choose a command following suit your needs:
 /index     - index/re-index a group
 /list      - list groups by categories
 /recommend - recommend some groups
-/cancel    - cancel the current operation
 `
 )
 
@@ -66,24 +65,33 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		return rsp, nil
 	}
 
+	var chatID int64
+	if chatID = getChatIDInUpdate(update); chatID == 0 {
+		log.Println("not chatID found, unsupported update type")
+		return
+	}
+
 	// Message handling logic
 	//
-	// 1. every command got a state machine
-	// 2. a new command interrupts an ongoing command's state machine
+	// 1. multi-stage command have a state machine
+	// 2. any command received will interrupt ongoing multi-stage command's state machine
 	if updateIsCommand(update) {
-		state := &CommandState{
-			ChatID:  update.Message.Chat.ID,
-			Command: update.Message.Command(),
-			Stage:   CommandReceived,
-		}
-
-		// overwrite any existing state
-		writeState(ctx, state)
+		// clear ongoing command's state
+		clearState(ctx, chatID)
 
 		content := ""
 		switch update.Message.Command() {
 		case "index":
+			// /index is a multi-stage command, so it has a state machine
+			state := &CommandState{
+				ChatID:  chatID,
+				Command: update.Message.Command(),
+				Stage:   CommandReceived,
+			}
+			writeState(ctx, state)
 			content = "please input your group link"
+		case "list", "recommend":
+			content = "under development"
 		default:
 			content = startContent
 		}
@@ -97,13 +105,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		return
 	}
 
-	// check for ongoing operation
-	var chatID int64
-	if chatID = getChatIDInUpdate(update); chatID == 0 {
-		log.Println("not chatID found, unsupported update type")
-		return
-	}
-
+	// check ongoing operation
 	state, err := getState(ctx, chatID)
 	if err != nil {
 		log.Println(err)
@@ -123,7 +125,13 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	}
 
 	// otherwise, take it a search scenario
-	handleSearch(ctx, update)
+	content := handleSearch(ctx, update)
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
+	msg.ParseMode = tgbotapi.ModeHTML
+	_, err = bot.Send(msg)
+	if err != nil {
+		log.Println(err)
+	}
 
 	return
 }

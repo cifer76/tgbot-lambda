@@ -80,7 +80,6 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 
 	msg := tgbotapi.NewMessage(chatID, "")
 	defer func() {
-		msg.ParseMode = tgbotapi.ModeHTML
 		msg.Text = content
 
 		_, err := bot.Send(msg)
