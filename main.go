@@ -17,14 +17,41 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+const (
+	startContent = `Welcome!
+
+Input any keyword to search for the related groups.
+
+or choose a command following suit your needs:
+
+/start     - show this information
+/index     - index/re-index a group
+/list      - list groups by categories
+/recommend - recommend some groups
+/cancel    - cancel the current operation
+`
+)
+
 var (
 	dynsvc *dynamodb.Client
 	bot    *tgbotapi.BotAPI
 	rdb    *redis.Client
 )
 
-func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	rsp := events.APIGatewayProxyResponse{
+func getChatIDInUpdate(update *tgbotapi.Update) int64 {
+	if update.Message != nil {
+		return update.Message.Chat.ID
+	} else if update.CallbackQuery != nil {
+		return update.CallbackQuery.Message.Chat.ID
+	}
+	return 0
+}
+func updateIsCommand(update *tgbotapi.Update) bool {
+	return update.Message != nil && update.Message.IsCommand()
+}
+
+func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (rsp events.APIGatewayProxyResponse, err error) {
+	rsp = events.APIGatewayProxyResponse{
 		StatusCode: 200,
 	}
 
@@ -38,14 +65,69 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		return rsp, nil
 	}
 
-	if update.Message == nil { // ignore any non-Message Updates
-		return rsp, nil
+	// Message handling logic
+	//
+	// 1. every command got a state machine
+	// 2. a new command interrupts an ongoing command's state machine
+	if updateIsCommand(update) {
+		state := &CommandState{
+			ChatID:  update.Message.Chat.ID,
+			Command: update.Message.Command(),
+			Next:    CommandReceived,
+		}
+
+		// overwrite any existing state
+		writeState(ctx, state)
+
+		content := ""
+		switch update.Message.Command() {
+		case "index":
+			content = "please input your group link"
+		default:
+			content = startContent
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
+
+		return
 	}
+
+	// check for ongoing operation
+	var chatID int64
+	if chatID = getChatIDInUpdate(update); chatID == 0 {
+		log.Println("not chatID found, unsupported update type")
+		return
+	}
+
+	state, err := getState(ctx, chatID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// ongoing operation exists
+	if state != nil {
+		h, ok := stateHandler[state.Command]
+		if !ok {
+			log.Println("wrong state, unsupported command found")
+		}
+
+		h(ctx, update, state)
+
+		return
+	}
+
+	// otherwise, take it a search scenario
+	handleSearch(ctx, update)
 
 	h := getHandler(ctx, update)
 	h(ctx, update)
 
-	return rsp, nil
+	return
 }
 
 func main() {

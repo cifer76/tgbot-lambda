@@ -35,9 +35,11 @@ Input any keyword to search for the related groups.
 
 or choose a command following suit your needs:
 
-/start   - show this information
-/request - request me to index/re-index a group
-/list    - list the indexed groups, maybe by categories
+/start     - show this information
+/index     - index/re-index a group
+/list      - list groups by categories
+/recommend - recommend some groups
+/cancel    - cancel the current operation
 `
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
