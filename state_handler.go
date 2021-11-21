@@ -29,7 +29,7 @@ const (
 
 var (
 	stateHandler = map[string]StateHandler{
-		"request": requestIndexStateHandler,
+		"index": requestIndexStateHandler,
 	}
 
 	patternGroupUsername *regexp.Regexp // group username must be only letters, numbers and underscore
