@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -73,7 +74,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		state := &CommandState{
 			ChatID:  update.Message.Chat.ID,
 			Command: update.Message.Command(),
-			Next:    CommandReceived,
+			Stage:   CommandReceived,
 		}
 
 		// overwrite any existing state
@@ -113,19 +114,16 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	if state != nil {
 		h, ok := stateHandler[state.Command]
 		if !ok {
-			log.Println("wrong state, unsupported command found")
+			fmt.Println("wrong state, unknown command found", state)
+			return
 		}
 
 		h(ctx, update, state)
-
 		return
 	}
 
 	// otherwise, take it a search scenario
 	handleSearch(ctx, update)
-
-	h := getHandler(ctx, update)
-	h(ctx, update)
 
 	return
 }

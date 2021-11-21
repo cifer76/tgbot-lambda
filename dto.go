@@ -17,7 +17,6 @@ type CommandState struct {
 
 	ChatID  int64  `json:"chatID"` // who is initiating the command?
 	Command string `json:"command"`
-	Next    int    `json:"next"`  // next stage
 	Stage   string `json:"stage"` // the current stage
 }
 

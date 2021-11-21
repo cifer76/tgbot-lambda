@@ -17,19 +17,25 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-type StateHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState) (string, error)
+type StateHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState)
 
 const (
-	CommandReceived int = iota
-	GroupLinkReceived
-	CategoryReceived
-	TagsReceived
-	Done
+	// state machine stages
+
+	// general
+	CommandReceived = "CommandReceived"
+	Done            = "Done"
+
+	// index command specific
+	GroupLinkReceived  = "GroupLinkReceived"
+	GroupTopicReceived = "GroupTopicReceived"
+
+	// TODO list group command specific
 )
 
 var (
 	stateHandler = map[string]StateHandler{
-		"index": requestIndexStateHandler,
+		"index": indexStateHandler,
 	}
 
 	patternGroupUsername *regexp.Regexp // group username must be only letters, numbers and underscore
@@ -56,35 +62,52 @@ func init() {
 	patternGroupCategory = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
 }
 
-func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *CommandState) (string, error) {
-	chatID := update.Message.Chat.ID
-	msg := tgbotapi.NewMessage(chatID, "")
-	msg.ParseMode = tgbotapi.ModeHTML
+func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *CommandState) {
+	// get user data from
+	var userInput string
+	var chatID int64
+	var content string
+	if update.Message != nil {
+		userInput = update.Message.Text
+		chatID = update.Message.Chat.ID
+	} else if update.CallbackQuery != nil {
+		userInput = update.CallbackQuery.Data
+		chatID = update.CallbackQuery.Message.Chat.ID
+	} else {
+		content = "unsupported input"
+		return
+	}
 
+	msg := tgbotapi.NewMessage(chatID, "")
 	defer func() {
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.Text = content
+
 		_, err := bot.Send(msg)
 		if err != nil {
 			log.Println(err)
 		}
 
-		if cs.Next == Done {
+		if cs.Stage == Done {
 			clearState(ctx, cs.ChatID)
 		} else {
 			writeState(ctx, cs)
 		}
 	}()
 
-	switch cs.Next {
-	case GroupLinkReceived:
-		groupLink := update.Message.Text
+	switch cs.Stage {
+	case CommandReceived:
+		groupLink := userInput
 		if !strings.HasPrefix(groupLink, "https://t.me/") && !strings.HasPrefix(groupLink, "t.me/") {
-			return "", fmt.Errorf("Invalid group link, the link must start with https://t.me/ or at least t.me/")
+			content = "Invalid group link, the link must start with https://t.me/ or at least t.me/"
+			return
 		}
 		// extract the group username
 		groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+5:])
 		// check username validity, telegram allows only letters, numbers and underscore characters in username
 		if !patternGroupUsername.MatchString(groupUsername) {
-			return "", fmt.Errorf("group username in the link invalid, must start with letters and contain only letters, numbers and underscore")
+			content = "group username in the link invalid, must start with letters and contain only letters, numbers and underscore"
+			return
 		}
 		// query group info
 		chat, err := bot.GetChat(tgbotapi.ChatConfig{
@@ -92,33 +115,32 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 		})
 		if err != nil {
 			log.Printf("getChat for %s error: %v\n", groupUsername, err)
-			return "", fmt.Errorf("can't find the group you provided, please check your group username")
+			content = "can't find the group you provided, please check your group username"
+			return
 		}
 		cs.Chat = chat
-		cs.Next = CategoryReceived
+		cs.Stage = GroupLinkReceived
 
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
 			chat.ID, chat.Title, chat.Type, chat.Description)
 
-		msg.Text = "please choose the topic most relevant to your group:"
+		content = "please choose the topic most relevant to your group"
 		msg.ReplyMarkup = categoryKeyboard
 
-		return "please input your group category", nil
-	case CategoryReceived:
-		// TODO provide a virtual keyword to let the user choose the category
-
+	case GroupLinkReceived:
 		// do some validation of the category
-		category := update.Message.Text
-		if !patternGroupCategory.MatchString(category) {
-			return "category invalid, please re-input", nil
+		topic := userInput
+		if !patternGroupCategory.MatchString(topic) {
+			content = "category invalid, please re-input"
+			return
 		}
 
-		cs.Category = category
-		cs.Next = TagsReceived
-		msg.Text = "please input your group tags, separated by space"
-		return "please input your group tags, separated by space", nil
-	case TagsReceived:
-		tags := strings.Fields(update.Message.Text)
+		content = "please input your group tags, separated by space"
+
+		cs.Category = topic
+		cs.Stage = GroupTopicReceived
+	case GroupTopicReceived:
+		tags := strings.Fields(userInput)
 
 		// do some validation of the tags
 		filtered := []string{}
@@ -157,7 +179,8 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 		})
 		if err != nil {
 			log.Printf("index %s error: %v\n", cs.UserName, err)
-			return "index failed, please try again later", nil
+			content = "index failed, please try again later"
+			return
 		}
 
 		// Write tags(for search) info
@@ -224,10 +247,11 @@ func requestIndexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *
 			}(t)
 		}
 		wg.Wait()
-		cs.Next = Done
-		msg.Text = fmt.Sprintf("Group %s has been indexed", cs.Title)
-		return "", nil
+
+		content = fmt.Sprintf("Group %s has been indexed", cs.Title)
+
+		cs.Stage = Done
+
 	default:
-		return "", nil
 	}
 }
