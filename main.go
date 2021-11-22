@@ -128,6 +128,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	content := handleSearch(ctx, update)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
 	msg.ParseMode = tgbotapi.ModeHTML
+	msg.DisableWebPagePreview = true
 	_, err = bot.Send(msg)
 	if err != nil {
 		log.Println(err)
