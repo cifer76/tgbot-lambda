@@ -44,14 +44,16 @@ var (
 
 	categoryKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Programming", "Programming"),
-			tgbotapi.NewInlineKeyboardButtonData("Politics", "Politics"),
-			tgbotapi.NewInlineKeyboardButtonData("Cryptocurrencies", "Cryptocurrencies"),
+			tgbotapi.NewInlineKeyboardButtonData("💻 Programming", "Programming"),
+			tgbotapi.NewInlineKeyboardButtonData("⚖️ Politics", "Politics"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Mathematics", "Mathematics"),
-			tgbotapi.NewInlineKeyboardButtonData("Finance", "Finance"),
-			tgbotapi.NewInlineKeyboardButtonData("Economics", "Economics"),
+			tgbotapi.NewInlineKeyboardButtonData("💰 Economics", "Economics"),
+			tgbotapi.NewInlineKeyboardButtonData("🖥 Technology", "Technology"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("₿ Cryptocurrencies", "Cryptocurrencies"),
+			tgbotapi.NewInlineKeyboardButtonData("⛓️ Blockchain", "Blockchain"),
 		),
 	)
 )
@@ -96,17 +98,15 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 
 	switch cs.Stage {
 	case CommandReceived:
-		groupLink := userInput
-		if !strings.HasPrefix(groupLink, "https://t.me/") && !strings.HasPrefix(groupLink, "t.me/") {
-			content = "Invalid group link, the link must start with https://t.me/ or at least t.me/"
-			return
-		}
-		// extract the group username
-		groupUsername := strings.TrimSpace(groupLink[strings.Index(groupLink, "t.me/")+5:])
-		// check username validity, telegram allows only letters, numbers and underscore characters in username
-		if !patternGroupUsername.MatchString(groupUsername) {
-			content = "group username in the link invalid, must start with letters and contain only letters, numbers and underscore"
-			return
+		groupUsername := userInput
+		if strings.HasPrefix(groupUsername, "https://t.me/") || strings.HasPrefix(groupUsername, "t.me/") {
+			// extract the group username
+			groupUsername = strings.TrimSpace(groupUsername[strings.Index(groupUsername, "t.me/")+5:])
+			// check username validity, telegram allows only letters, numbers and underscore characters in username
+			if !patternGroupUsername.MatchString(groupUsername) {
+				content = getLocalizedText(ctx, UsernameInvalid)
+				return
+			}
 		}
 		// query group info
 		chat, err := bot.GetChat(tgbotapi.ChatConfig{
@@ -114,7 +114,7 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		})
 		if err != nil {
 			log.Printf("getChat for %s error: %v\n", groupUsername, err)
-			content = "can't find the group you provided, please check your group username"
+			content = getLocalizedText(ctx, GroupNotFound)
 			return
 		}
 		cs.Chat = chat
@@ -123,19 +123,18 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
 			chat.ID, chat.Title, chat.Type, chat.Description)
 
-		content = "please choose the topic most relevant to your group"
+		content = getLocalizedText(ctx, TopicChoosing)
 		msg.ReplyMarkup = categoryKeyboard
 
 	case GroupLinkReceived:
 		// do some validation of the category
 		topic := userInput
 		if !patternGroupCategory.MatchString(topic) {
-			content = "category invalid, please re-input"
+			content = getLocalizedText(ctx, TopicInvalid)
 			return
 		}
 
-		content = "please input your group tags, separated by space"
-
+		content = getLocalizedText(ctx, TagsInputting)
 		cs.Category = topic
 		cs.Stage = GroupTopicReceived
 	case GroupTopicReceived:
@@ -181,7 +180,7 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		})
 		if err != nil {
 			log.Printf("index %s error: %v\n", cs.UserName, err)
-			content = "index failed, please try again later"
+			content = getLocalizedText(ctx, IndexFailed)
 			return
 		}
 
@@ -250,7 +249,7 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		}
 		wg.Wait()
 
-		content = fmt.Sprintf("Group %s has been indexed", cs.Title)
+		content = fmt.Sprintf(getLocalizedText(ctx, IndexSuccess), cs.Title)
 
 		cs.Stage = Done
 
