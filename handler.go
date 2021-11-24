@@ -15,8 +15,19 @@ import (
 
 type Handler func(ctx context.Context, update *tgbotapi.Update)
 
-func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
+func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	tokens := strings.Fields(update.Message.Text)
+
+	var rsp string
+	defer func() {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, rsp)
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.DisableWebPagePreview = true
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	keywords := []string{}
 	for _, t := range tokens {
@@ -42,14 +53,16 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	})
 	if err != nil {
 		log.Printf("error during batch get tags, err %v\n", err)
-		return "An error occurred, empty result"
+		rsp = "An error occurred, empty result"
+		return
 	}
 
 	recs := []TagRecord{}
 	err = attributevalue.UnmarshalListOfMaps(out.Responses["tags"], &recs)
 	if err != nil {
 		log.Printf("error during unmarshal tags, err %v\n", err)
-		return "An error occurred, empty result"
+		rsp = "An error occurred, empty result"
+		return
 	}
 
 	// sort by how many tags the group matches
@@ -78,7 +91,8 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	}
 
 	if len(keys) < 1 {
-		return "no results found"
+		rsp = "no results found"
+		return
 	}
 
 	// batch get groups by group usernames
@@ -91,17 +105,19 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) string {
 	})
 	if err != nil {
 		log.Printf("error during batch get groups, err %v\n", err)
-		return "An error occurred, empty result"
+		rsp = "An error occurred, empty result"
+		return
 	}
 
 	groups := []GroupRecord{}
 	err = attributevalue.UnmarshalListOfMaps(out.Responses["groups"], &groups)
 	if err != nil {
 		log.Printf("error during unmarshal groups, err %v\n", err)
-		return "An error occurred, empty result"
+		rsp = "An error occurred, empty result"
+		return
 	}
 
-	rsp := `
+	rsp = `
 Found the following results:
 
 `
@@ -114,5 +130,5 @@ Found the following results:
 		line := fmt.Sprintf("%d. %s <a href=\"https://t.me/%s\">%s</a> <pre>%s</pre>\n", i+1, icon, g.Username, g.Title, g.Description)
 		rsp += line
 	}
-	return rsp
+	return
 }

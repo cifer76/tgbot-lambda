@@ -125,15 +125,7 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 	}
 
 	// otherwise, take it a search scenario
-	content := handleSearch(ctx, update)
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
-	msg.ParseMode = tgbotapi.ModeHTML
-	msg.DisableWebPagePreview = true
-	_, err = bot.Send(msg)
-	if err != nil {
-		log.Println(err)
-	}
-
+	handleSearch(ctx, update)
 	return
 }
 
@@ -169,8 +161,9 @@ func init() {
 		Debug:  true,
 	}
 
+	redisAddr := os.Getenv("REDIS_ADDR")
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     "tgbot-001.3pmgxw.0001.ape1.cache.amazonaws.com:6379",
+		Addr:     redisAddr,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
