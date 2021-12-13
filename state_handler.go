@@ -42,10 +42,25 @@ var (
 	patternGroupTag      *regexp.Regexp // group tag can be CJK characters and english letters
 	patternGroupCategory *regexp.Regexp // group category can be CJK characters and english letters
 
-	categoryKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	categoryKeyboardCN = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("💻 编程", "Programming"),
+			tgbotapi.NewInlineKeyboardButtonData("⚖️  政治", "Politics"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("💰 经济金融", "Economics"),
+			tgbotapi.NewInlineKeyboardButtonData("🖥 科技", "Technology"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("₿ 加密货币", "Cryptocurrencies"),
+			tgbotapi.NewInlineKeyboardButtonData("⛓️ 区块链", "Blockchain"),
+		),
+	)
+
+	categoryKeyboardEN = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("💻 Programming", "Programming"),
-			tgbotapi.NewInlineKeyboardButtonData("⚖️ Politics", "Politics"),
+			tgbotapi.NewInlineKeyboardButtonData("⚖️  Politics", "Politics"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("💰 Economics", "Economics"),
@@ -80,8 +95,6 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		content = "unsupported input"
 		return
 	}
-
-	log.Printf("userInput: %+v\n", userInput)
 
 	msg := tgbotapi.NewMessage(chatID, "")
 	defer func() {
@@ -127,13 +140,12 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 			chat.ID, chat.Title, chat.Type, chat.Description)
 
 		content = getLocalizedText(ctx, TopicChoosing)
-		msg.ReplyMarkup = categoryKeyboard
+		msg.ReplyMarkup = categoryKeyboardCN
 
 	case GroupLinkReceived:
 		// do some validation of the category
 		topic := userInput
 		if !patternGroupCategory.MatchString(topic) {
-			log.Printf("string unmatch\n")
 			content = getLocalizedText(ctx, TopicInvalid)
 			return
 		}

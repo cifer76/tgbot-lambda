@@ -44,7 +44,7 @@ var (
 		},
 		TagsInputting: {
 			"en": "please input your group tags, separated by space",
-			"zh": "话题输入非法, 请重新输入",
+			"zh": "输入群组标签, 以便于群组被更容易的搜索到",
 		},
 		IndexFailed: {
 			"en": "index failed, please try again later",
@@ -77,6 +77,42 @@ or choose a command following suit your needs:
 /list      - 列出所有群组
 /recommend - (🔥 推广) 随机推荐一些群组
         `,
+	}
+)
+
+var (
+	TopicProgramming      = "Programming"
+	TopicPolitics         = "Politics"
+	TopicEconomics        = "Economics"
+	TopicTechnology       = "Technology"
+	TopicCryptocurrencies = "Cryptocurrencies"
+	TopicBlockchain       = "Blockchain"
+
+	TopicKeyboardTexts = map[string]map[string]string{
+		TopicProgramming: {
+			"en": "💻 Programming",
+			"zh": "💻 编程",
+		},
+		TopicPolitics: {
+			"en": "🏛️ Politics",
+			"zh": "🏛️ 政治",
+		},
+		TopicEconomics: {
+			"en": "📈 Economics",
+			"zh": "📈 经济金融",
+		},
+		TopicTechnology: {
+			"en": "🖥 Technology",
+			"zh": "🖥 科技",
+		},
+		TopicCryptocurrencies: {
+			"en": "₿ Cryptocurrencies",
+			"zh": "₿ 加密货币",
+		},
+		TopicBlockchain: {
+			"en": "⛓️ Blockchain",
+			"zh": "⛓️ 区块链",
+		},
 	}
 )
 
