@@ -81,6 +81,8 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		return
 	}
 
+	log.Printf("userInput: %+v\n", userInput)
+
 	msg := tgbotapi.NewMessage(chatID, "")
 	defer func() {
 		msg.Text = content
@@ -131,6 +133,7 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		// do some validation of the category
 		topic := userInput
 		if !patternGroupCategory.MatchString(topic) {
+			log.Printf("string unmatch\n")
 			content = getLocalizedText(ctx, TopicInvalid)
 			return
 		}
