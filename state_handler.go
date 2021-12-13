@@ -69,6 +69,7 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 	var userInput string
 	var chatID int64
 	var content string
+
 	if update.Message != nil {
 		userInput = update.Message.Text
 		chatID = update.Message.Chat.ID

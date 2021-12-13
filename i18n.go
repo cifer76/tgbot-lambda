@@ -7,9 +7,10 @@ const (
 	GroupLinkInvalid = "GroupLinkInvalid"
 	GroupNotFound    = "GroupNotFound"
 
-	TopicChoosing = "TopicChoosing"
-	TopicInvalid  = "TopicInvalid"
-	TagsInputting = "TopicInputting"
+	InputGroupLink = "InputGroupLink"
+	TopicChoosing  = "TopicChoosing"
+	TopicInvalid   = "TopicInvalid"
+	TagsInputting  = "TopicInputting"
 
 	IndexFailed  = "IndexFailed"
 	IndexSuccess = "IndexSuccess"
@@ -28,6 +29,10 @@ var (
 		GroupNotFound: {
 			"en": "find no group or channel, please check your input",
 			"zh": "未找到群组或频道, 请检查你的输入",
+		},
+		InputGroupLink: {
+			"en": "please input your group link",
+			"zh": "输入群组链接",
 		},
 		TopicChoosing: {
 			"en": "please choose the most relevant topic for your group",
@@ -50,10 +55,37 @@ var (
 			"zh": "已收录 %s",
 		},
 	}
+
+	startContent = map[string]string{
+		"en": `
+Input any keyword to search for the related groups.
+
+or choose a command following suit your needs:
+
+/start     - show this information
+/index     - index/re-index a group
+/list      - list groups by categories
+/recommend - recommend some groups
+        `,
+		"zh": `
+你可以直接输入关键词来查找相应的群组.
+
+或者使用如下命令完成不同的操作:
+
+/start     - 展示这个操作指引
+/index     - 索引某个群组(或频道)
+/list      - 列出所有群组
+/recommend - (🔥 推广) 随机推荐一些群组
+        `,
+	}
 )
 
 // TODO embed user settings(language settings) into context and persistently store to db
 // thereafter everytime a user initates a chat, get the language settings from db
 func getLocalizedText(ctx context.Context, tmpl string) string {
 	return texts[tmpl]["zh"]
+}
+
+func getStartContent(ctx context.Context) string {
+	return startContent["zh"]
 }

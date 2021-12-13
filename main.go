@@ -3,33 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
 	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-)
-
-const (
-	startContent = `Welcome!
-
-Input any keyword to search for the related groups.
-
-or choose a command following suit your needs:
-
-/start     - show this information
-/index     - index/re-index a group
-/list      - list groups by categories
-/recommend - recommend some groups
-`
 )
 
 var (
@@ -46,6 +30,7 @@ func getChatIDInUpdate(update *tgbotapi.Update) int64 {
 	}
 	return 0
 }
+
 func updateIsCommand(update *tgbotapi.Update) bool {
 	return update.Message != nil && update.Message.IsCommand()
 }
@@ -73,8 +58,8 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 
 	// Message handling logic
 	//
-	// 1. multi-stage command have a state machine
-	// 2. any command received will interrupt ongoing multi-stage command's state machine
+	// 1. multi-stage command has a state machine
+	// 2. any command interrupts ongoing multi-stage command's state machine
 	if updateIsCommand(update) {
 		// clear ongoing command's state
 		clearState(ctx, chatID)
@@ -89,11 +74,11 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 				Stage:   CommandReceived,
 			}
 			writeState(ctx, state)
-			content = "please input your group link"
+			content = getLocalizedText(ctx, InputGroupLink)
 		case "list", "recommend":
 			content = "under development"
 		default:
-			content = startContent
+			content = getStartContent(ctx)
 		}
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
@@ -101,31 +86,31 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		if err != nil {
 			log.Println(err)
 		}
-
-		return
-	}
-
-	// check ongoing operation
-	state, err := getState(ctx, chatID)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	// ongoing operation exists
-	if state != nil {
-		h, ok := stateHandler[state.Command]
-		if !ok {
-			fmt.Println("wrong state, unknown command found", state)
+	} else {
+		// check ongoing operation
+		var state *CommandState
+		state, err = getState(ctx, chatID)
+		if err != nil {
+			log.Println(err)
 			return
 		}
 
-		h(ctx, update, state)
-		return
+		// ongoing operation exists
+		if state != nil {
+			h, ok := stateHandler[state.Command]
+			if !ok {
+				log.Println("wrong state, unknown command found", state)
+				return
+			}
+
+			h(ctx, update, state)
+			return
+		}
+
+		// otherwise, take it a search scenario
+		handleSearch(ctx, update)
 	}
 
-	// otherwise, take it a search scenario
-	handleSearch(ctx, update)
 	return
 }
 
