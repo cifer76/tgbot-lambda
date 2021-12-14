@@ -30,64 +30,6 @@ func updateIsCommand(update *tgbotapi.Update) bool {
 	return update.Message != nil && update.Message.IsCommand()
 }
 
-func handleUpdate(ctx context.Context, update tgbotapi.Update) {
-	log.Printf("TG Update: %+v\n", update)
-
-	var chatID int64
-	if chatID = getChatIDInUpdate(&update); chatID == 0 {
-		log.Println("not chatID found, unsupported update type")
-		return
-	}
-
-	// If it's a command message
-	if updateIsCommand(&update) {
-
-		// 1. multi-stage command has a state machine
-		// 2. any command interrupts ongoing multi-stage command's state machine
-
-		// clear ongoing command's state
-		clearState(chatID)
-
-		content := ""
-		switch update.Message.Command() {
-		case "index":
-			// /index is a multi-stage command, so it has a state machine
-			state := &CommandState{
-				ChatID:  chatID,
-				Command: update.Message.Command(),
-				Stage:   CommandReceived,
-			}
-			writeState(state)
-			content = getLocalizedText(ctx, InputGroupLink)
-		case "list", "recommend":
-			content = "under development"
-		default:
-			content = getStartContent(ctx)
-		}
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
-		_, err := bot.Send(msg)
-		if err != nil {
-			log.Println(err)
-		}
-		return
-	}
-
-	// if not a command message
-
-	// check ongoing operation
-	if state := getState(ctx, chatID); state != nil {
-		h := stateHandler[state.Command]
-		h(ctx, &update, state)
-		return
-	}
-
-	// otherwise, take it a search scenario
-	handleSearch(ctx, &update)
-
-	return
-}
-
 func main() {
 	// initialize tgbot
 	botToken := os.Getenv("BOT_TOKEN")

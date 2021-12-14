@@ -4,7 +4,6 @@
 
 [x] Support searching for groups by keyword
 [x] group groups by tags and categories
-[ ] provide an interactive chat interface like botfather, to permit interrupt in the middle of a command
 [ ] rate the group periodically, then sort them during search recalling
 
 # Set up webhook

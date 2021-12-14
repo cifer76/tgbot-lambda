@@ -132,3 +132,36 @@ Found the following results:
 	}
 	return
 }
+
+func handleUpdate(ctx context.Context, update tgbotapi.Update) {
+	log.Printf("TG Update: %+v\n", update)
+
+	var chatID int64
+	if chatID = getChatIDInUpdate(&update); chatID == 0 {
+		log.Println("not chatID found, unsupported update type")
+		return
+	}
+
+	s := getState(ctx, chatID)
+	if updateIsCommand(&update) {
+		// 1. in reality, it isn't necessary for every command to have a state machine
+		//    but we take it as so, it makes our code simple and consistent
+		// 2. any command interrupts an another command's state machine
+
+		s = &CommandState{
+			ChatID:  chatID,
+			Command: update.Message.Command(),
+			Stage:   CommandReceived,
+		}
+		writeState(s)
+	}
+
+	if s != nil {
+		h := getCommandHandler(s.Command)
+		h(ctx, &update, s)
+		return
+	}
+
+	// not command and no state, then it's the simplest case: keyword search
+	handleSearch(ctx, &update)
+}

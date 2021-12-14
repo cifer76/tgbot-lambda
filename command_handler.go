@@ -17,7 +17,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-type StateHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState)
+type CommandHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState)
 
 const (
 	// state machine stages
@@ -29,15 +29,10 @@ const (
 	// index command specific
 	GroupLinkReceived  = "GroupLinkReceived"
 	GroupTopicReceived = "GroupTopicReceived"
-
-	// TODO list group command specific
+	GroupTagsReceived  = "GroupTagsReceived"
 )
 
 var (
-	stateHandler = map[string]StateHandler{
-		"index": indexStateHandler,
-	}
-
 	patternGroupUsername *regexp.Regexp // group username must be only letters, numbers and underscore
 	patternGroupTag      *regexp.Regexp // group tag can be CJK characters and english letters
 	patternGroupCategory *regexp.Regexp // group category can be CJK characters and english letters
@@ -73,13 +68,7 @@ var (
 	)
 )
 
-func init() {
-	patternGroupUsername = regexp.MustCompile("^[a-zA-Z]+[0-9_a-zA-Z]+$")
-	patternGroupTag = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
-	patternGroupCategory = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
-}
-
-func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *CommandState) {
+func indexCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandState) {
 	// get user data from
 	var userInput string
 	var chatID int64
@@ -105,15 +94,18 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 			log.Println(err)
 		}
 
-		if cs.Stage == Done {
-			clearState(cs.ChatID)
+		if s.Stage == Done {
+			clearState(s.ChatID)
 		} else {
-			writeState(cs)
+			writeState(s)
 		}
 	}()
 
-	switch cs.Stage {
+	switch s.Stage {
 	case CommandReceived:
+		s.Stage = GroupLinkReceived
+		content = getLocalizedText(ctx, InputGroupLink)
+	case GroupLinkReceived:
 		groupUsername := userInput
 		if strings.HasPrefix(groupUsername, "https://t.me/") || strings.HasPrefix(groupUsername, "t.me/") {
 			// extract the group username
@@ -133,27 +125,13 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 			content = getLocalizedText(ctx, GroupNotFound)
 			return
 		}
-		cs.Chat = chat
-		cs.Stage = GroupLinkReceived
+		s.Chat = chat
+		s.Stage = GroupTagsReceived
+		content = getLocalizedText(ctx, TagsInputting)
 
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
 			chat.ID, chat.Title, chat.Type, chat.Description)
-
-		content = getLocalizedText(ctx, TopicChoosing)
-		msg.ReplyMarkup = categoryKeyboardCN
-
-	case GroupLinkReceived:
-		// do some validation of the category
-		topic := userInput
-		if !patternGroupCategory.MatchString(topic) {
-			content = getLocalizedText(ctx, TopicInvalid)
-			return
-		}
-
-		content = getLocalizedText(ctx, TagsInputting)
-		cs.Category = topic
-		cs.Stage = GroupTopicReceived
-	case GroupTopicReceived:
+	case GroupTagsReceived:
 		tags := strings.Fields(userInput)
 
 		// do some validation of the tags
@@ -170,13 +148,13 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 			tags = tags[:3]
 		}
 
-		cs.Tags = tags
+		s.Tags = tags
 
 		// write group info
 		updatedOldValues, err := dynsvc.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 			TableName: aws.String("groups"),
 			Key: map[string]types.AttributeValue{
-				"username": &types.AttributeValueMemberS{Value: cs.UserName},
+				"username": &types.AttributeValueMemberS{Value: s.UserName},
 			},
 			ReturnValues:     types.ReturnValueUpdatedOld,
 			UpdateExpression: aws.String("set title = :title, #t = :type, description = :desc, chat_id = :chat_id, category = :category, tags = :tags, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
@@ -184,18 +162,18 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 				"#t": "type",
 			},
 			ExpressionAttributeValues: map[string]types.AttributeValue{
-				":title":      &types.AttributeValueMemberS{Value: cs.Title},
-				":type":       &types.AttributeValueMemberS{Value: cs.Type},
-				":desc":       &types.AttributeValueMemberS{Value: cs.Description},
-				":chat_id":    &types.AttributeValueMemberN{Value: strconv.FormatInt(cs.ID, 10)},
+				":title":      &types.AttributeValueMemberS{Value: s.Title},
+				":type":       &types.AttributeValueMemberS{Value: s.Type},
+				":desc":       &types.AttributeValueMemberS{Value: s.Description},
+				":chat_id":    &types.AttributeValueMemberN{Value: strconv.FormatInt(s.ID, 10)},
 				":created_at": &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
 				":update_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
-				":category":   &types.AttributeValueMemberS{Value: cs.Category},
-				":tags":       &types.AttributeValueMemberSS{Value: cs.Tags},
+				":category":   &types.AttributeValueMemberS{Value: s.Category},
+				":tags":       &types.AttributeValueMemberSS{Value: s.Tags},
 			},
 		})
 		if err != nil {
-			log.Printf("index %s error: %v\n", cs.UserName, err)
+			log.Printf("index %s error: %v\n", s.UserName, err)
 			content = getLocalizedText(ctx, IndexFailed)
 			return
 		}
@@ -210,7 +188,7 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		for _, o := range oldTags {
 			checkOld[o] = true
 		}
-		for _, t := range cs.Tags {
+		for _, t := range s.Tags {
 			if _, ok := checkOld[t]; !ok { // if the new tag doesn't overlap with old tags, we need to index the group use the new tag
 				toAdd = append(toAdd, t)
 			} else { // if overlapped, mark the old tag to false for reservation
@@ -236,11 +214,11 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 					},
 					UpdateExpression: aws.String("add groups :group"),
 					ExpressionAttributeValues: map[string]types.AttributeValue{
-						":group": &types.AttributeValueMemberSS{Value: []string{cs.UserName}},
+						":group": &types.AttributeValueMemberSS{Value: []string{s.UserName}},
 					},
 				})
 				if err != nil {
-					log.Printf("add tag index %s:%s error: %v\n", tag, cs.UserName, err)
+					log.Printf("add tag index %s:%s error: %v\n", tag, s.UserName, err)
 				}
 			}(t)
 		}
@@ -255,20 +233,54 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 					},
 					UpdateExpression: aws.String("delete groups :group"),
 					ExpressionAttributeValues: map[string]types.AttributeValue{
-						":group": &types.AttributeValueMemberSS{Value: []string{cs.UserName}},
+						":group": &types.AttributeValueMemberSS{Value: []string{s.UserName}},
 					},
 				})
 				if err != nil {
-					log.Printf("delete tags index %s:%s error: %v\n", tag, cs.UserName, err)
+					log.Printf("delete tags index %s:%s error: %v\n", tag, s.UserName, err)
 				}
 			}(t)
 		}
 		wg.Wait()
 
-		content = fmt.Sprintf(getLocalizedText(ctx, IndexSuccess), cs.Title)
-
-		cs.Stage = Done
-
+		s.Stage = Done
+		content = fmt.Sprintf(getLocalizedText(ctx, IndexSuccess), s.Title)
 	default:
 	}
+}
+
+func startCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandState) {
+	// get user data from
+	var chatID int64
+	var content string
+
+	if update.Message != nil {
+		chatID = update.Message.Chat.ID
+	}
+
+	content = getStartContent(ctx)
+	msg := tgbotapi.NewMessage(chatID, content)
+	_, err := bot.Send(msg)
+	if err != nil {
+		log.Println(err)
+	}
+
+	clearState(s.ChatID)
+
+}
+
+func getCommandHandler(command string) CommandHandler {
+
+	switch command {
+	case "index":
+		return indexCommandHandler
+	default:
+		return startCommandHandler
+	}
+}
+
+func init() {
+	patternGroupUsername = regexp.MustCompile("^[a-zA-Z]+[0-9_a-zA-Z]+$")
+	patternGroupTag = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
+	patternGroupCategory = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
 }
