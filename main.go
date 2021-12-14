@@ -114,13 +114,13 @@ func main() {
 		Debug:  true,
 	}
 
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServe("0.0.0.0:8843", nil)
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+	updates, _ := bot.GetUpdatesChan(u)
 
 	for u := range updates {
 		handleUpdate(context.Background(), u)
 	}
-
 }
 
 func init() {
