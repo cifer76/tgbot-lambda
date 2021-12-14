@@ -9,14 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
-	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var (
 	dynsvc *dynamodb.Client
 	bot    *tgbotapi.BotAPI
-	rdb    *redis.Client
 )
 
 func getChatIDInUpdate(update *tgbotapi.Update) int64 {
@@ -48,7 +46,7 @@ func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 		// 2. any command interrupts ongoing multi-stage command's state machine
 
 		// clear ongoing command's state
-		clearState(ctx, chatID)
+		clearState(chatID)
 
 		content := ""
 		switch update.Message.Command() {
@@ -59,7 +57,7 @@ func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 				Command: update.Message.Command(),
 				Stage:   CommandReceived,
 			}
-			writeState(ctx, state)
+			writeState(state)
 			content = getLocalizedText(ctx, InputGroupLink)
 		case "list", "recommend":
 			content = "under development"
@@ -78,15 +76,7 @@ func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 	// if not a command message
 
 	// check ongoing operation
-	var state *CommandState
-	state, err := getState(ctx, chatID)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	// ongoing operation exists
-	if state != nil {
+	if state := getState(ctx, chatID); state != nil {
 		h := stateHandler[state.Command]
 		h(ctx, &update, state)
 		return
@@ -114,7 +104,7 @@ func main() {
 		Debug:  true,
 	}
 
-	u := tgbotapi.NewUpdate(0)
+	u := tgbotapi.NewUpdate(-1)
 	u.Timeout = 60
 	updates, _ := bot.GetUpdatesChan(u)
 
@@ -135,11 +125,4 @@ func init() {
 
 	// Using the Config value, create the DynamoDB client
 	dynsvc = dynamodb.NewFromConfig(cfg)
-
-	redisAddr := os.Getenv("REDIS_ADDR")
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
 }

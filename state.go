@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	cache "github.com/patrickmn/go-cache"
 )
 
 const (
@@ -15,46 +14,30 @@ const (
 	expireDuration = 5 * time.Minute
 )
 
-func getState(ctx context.Context, chatID int64) (*CommandState, error) {
+var (
+	mcache = cache.New(5*time.Minute, 10*time.Minute)
+)
+
+func getState(ctx context.Context, chatID int64) *CommandState {
 	key := stateKey + strconv.FormatInt(chatID, 10)
 
-	output, err := rdb.Get(ctx, key).Result()
-	if err == redis.Nil { // key does not exist
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
+	if x, found := mcache.Get(key); found {
+		state := x.(*CommandState)
+		log.Printf("getState: %+v\n", state)
+		return state
 	}
 
-	log.Printf("getState: %v\n", output)
-
-	state := &CommandState{}
-	_ = json.Unmarshal([]byte(output), state)
-	return state, nil
+	return nil
 }
 
-func writeState(ctx context.Context, state *CommandState) error {
+func writeState(state *CommandState) {
 	key := stateKey + strconv.FormatInt(state.ChatID, 10)
-
-	bytes, _ := json.Marshal(state)
-
-	log.Printf("writeState: %v\n", string(bytes))
-
-	_, err := rdb.Set(ctx, key, bytes, expireDuration).Result()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	log.Printf("writeState: %+v\n", state)
+	mcache.Set(key, state, cache.DefaultExpiration)
 }
 
-func clearState(ctx context.Context, chatID int64) error {
+func clearState(chatID int64) {
 	key := stateKey + strconv.FormatInt(chatID, 10)
-	log.Printf("clearState: %v\n", key)
-	_, err := rdb.Expire(ctx, key, 0).Result()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	log.Printf("clearState: %+v\n", key)
+	mcache.Delete(key)
 }

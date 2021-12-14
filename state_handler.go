@@ -106,9 +106,9 @@ func indexStateHandler(ctx context.Context, update *tgbotapi.Update, cs *Command
 		}
 
 		if cs.Stage == Done {
-			clearState(ctx, cs.ChatID)
+			clearState(cs.ChatID)
 		} else {
-			writeState(ctx, cs)
+			writeState(cs)
 		}
 	}()
 
