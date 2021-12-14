@@ -101,7 +101,6 @@ func main() {
 		Token:  botToken,
 		Client: &http.Client{},
 		Buffer: 100,
-		Debug:  true,
 	}
 
 	u := tgbotapi.NewUpdate(-1)
@@ -118,7 +117,7 @@ func init() {
 	// Using the SDK's default configuration, loading additional config
 	// and credentials values from the environment variables, shared
 	// credentials, and shared configuration files
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(os.Getenv("AWS_REGION")))
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("ap-east-1"))
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v\n", err)
 	}

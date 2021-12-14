@@ -23,7 +23,7 @@ func getState(ctx context.Context, chatID int64) *CommandState {
 
 	if x, found := mcache.Get(key); found {
 		state := x.(*CommandState)
-		log.Printf("getState: %+v\n", state)
+		log.Printf("getState, chatID: %v, command: %v, stage: %v\n", state.ChatID, state.Command, state.Stage)
 		return state
 	}
 
@@ -32,12 +32,12 @@ func getState(ctx context.Context, chatID int64) *CommandState {
 
 func writeState(state *CommandState) {
 	key := stateKey + strconv.FormatInt(state.ChatID, 10)
-	log.Printf("writeState: %+v\n", state)
+	log.Printf("writeState, chatID: %v, command: %v, stage: %v\n", state.ChatID, state.Command, state.Stage)
 	mcache.Set(key, state, cache.DefaultExpiration)
 }
 
 func clearState(chatID int64) {
 	key := stateKey + strconv.FormatInt(chatID, 10)
-	log.Printf("clearState: %+v\n", key)
+	log.Printf("clearState, chatID: %v\n", key)
 	mcache.Delete(key)
 }
