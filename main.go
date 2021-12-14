@@ -2,13 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/aws/aws-lambda-go/events"
-	runtime "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
@@ -35,32 +32,21 @@ func updateIsCommand(update *tgbotapi.Update) bool {
 	return update.Message != nil && update.Message.IsCommand()
 }
 
-func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (rsp events.APIGatewayProxyResponse, err error) {
-	rsp = events.APIGatewayProxyResponse{
-		StatusCode: 200,
-	}
-
-	// event
-	eventJson, _ := json.Marshal(event)
-	log.Printf("EVENT: %s", eventJson)
-
-	update := &tgbotapi.Update{}
-	if err := json.Unmarshal([]byte(event.Body), update); err != nil {
-		log.Println("Malformed update message")
-		return rsp, nil
-	}
+func handleUpdate(ctx context.Context, update tgbotapi.Update) {
+	log.Printf("TG Update: %+v\n", update)
 
 	var chatID int64
-	if chatID = getChatIDInUpdate(update); chatID == 0 {
+	if chatID = getChatIDInUpdate(&update); chatID == 0 {
 		log.Println("not chatID found, unsupported update type")
 		return
 	}
 
-	// Message handling logic
-	//
-	// 1. multi-stage command has a state machine
-	// 2. any command interrupts ongoing multi-stage command's state machine
-	if updateIsCommand(update) {
+	// If it's a command message
+	if updateIsCommand(&update) {
+
+		// 1. multi-stage command has a state machine
+		// 2. any command interrupts ongoing multi-stage command's state machine
+
 		// clear ongoing command's state
 		clearState(ctx, chatID)
 
@@ -82,55 +68,37 @@ func HandleTGUpdates(ctx context.Context, event events.APIGatewayProxyRequest) (
 		}
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, content)
-		_, err = bot.Send(msg)
+		_, err := bot.Send(msg)
 		if err != nil {
 			log.Println(err)
 		}
-	} else {
-		// check ongoing operation
-		var state *CommandState
-		state, err = getState(ctx, chatID)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		// ongoing operation exists
-		if state != nil {
-			h, ok := stateHandler[state.Command]
-			if !ok {
-				log.Println("wrong state, unknown command found", state)
-				return
-			}
-
-			h(ctx, update, state)
-			return
-		}
-
-		// otherwise, take it a search scenario
-		handleSearch(ctx, update)
+		return
 	}
+
+	// if not a command message
+
+	// check ongoing operation
+	var state *CommandState
+	state, err := getState(ctx, chatID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// ongoing operation exists
+	if state != nil {
+		h := stateHandler[state.Command]
+		h(ctx, &update, state)
+		return
+	}
+
+	// otherwise, take it a search scenario
+	handleSearch(ctx, &update)
 
 	return
 }
 
 func main() {
-	runtime.Start(HandleTGUpdates)
-}
-
-func init() {
-	// Initialize dynamodb client
-	// Using the SDK's default configuration, loading additional config
-	// and credentials values from the environment variables, shared
-	// credentials, and shared configuration files
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(os.Getenv("AWS_REGION")))
-	if err != nil {
-		log.Fatalf("unable to load SDK config, %v\n", err)
-	}
-
-	// Using the Config value, create the DynamoDB client
-	dynsvc = dynamodb.NewFromConfig(cfg)
-
 	// initialize tgbot
 	botToken := os.Getenv("BOT_TOKEN")
 	if botToken == "" {
@@ -145,6 +113,28 @@ func init() {
 		Buffer: 100,
 		Debug:  true,
 	}
+
+	updates := bot.ListenForWebhook("/" + bot.Token)
+	go http.ListenAndServe("0.0.0.0:8843", nil)
+
+	for u := range updates {
+		handleUpdate(context.Background(), u)
+	}
+
+}
+
+func init() {
+	// Initialize dynamodb client
+	// Using the SDK's default configuration, loading additional config
+	// and credentials values from the environment variables, shared
+	// credentials, and shared configuration files
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(os.Getenv("AWS_REGION")))
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v\n", err)
+	}
+
+	// Using the Config value, create the DynamoDB client
+	dynsvc = dynamodb.NewFromConfig(cfg)
 
 	redisAddr := os.Getenv("REDIS_ADDR")
 	rdb = redis.NewClient(&redis.Options{
