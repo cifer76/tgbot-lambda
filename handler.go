@@ -137,7 +137,7 @@ func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 	log.Printf("TG Update: %+v\n", update)
 
 	var chatID int64
-	if chatID = getChatIDInUpdate(&update); chatID == 0 {
+	if chatID = getChatIDFromUpdate(&update); chatID == 0 {
 		log.Println("not chatID found, unsupported update type")
 		return
 	}

@@ -3,17 +3,45 @@ package main
 import "context"
 
 const (
+	// error messages
 	UsernameInvalid  = "UsernameInvalid"
 	GroupLinkInvalid = "GroupLinkInvalid"
 	GroupNotFound    = "GroupNotFound"
+	TopicInvalid     = "TopicInvalid"
 
+	// promptting messages
 	InputGroupLink = "InputGroupLink"
+	InputTags      = "InputTags"
 	TopicChoosing  = "TopicChoosing"
-	TopicInvalid   = "TopicInvalid"
-	TagsInputting  = "TopicInputting"
 
+	// result
 	IndexFailed  = "IndexFailed"
 	IndexSuccess = "IndexSuccess"
+)
+
+const (
+	InputGroupLinkCN = `
+    请输入群组/频道的完整链接或 username.
+
+    e.g. https://t.me/nightyworld
+    e.g. nightyworld
+    `
+
+	InputTagsCN = `
+	为此群组/频道输入几个关键字以使其更容易被发现. 每个群组/频道最多支持 3 个关键字, 以空格分割.
+
+    e.g. 社科 闲聊
+    e.g. 消费 数码 geek
+    `
+
+	IndexSuccessCN = `
+    恭喜! 你的群组/频道已录入.
+
+    群组/频道名: %s
+    简介: %s
+    检索关键字: %s
+    录入时间: %s
+    `
 )
 
 var (
@@ -32,7 +60,7 @@ var (
 		},
 		InputGroupLink: {
 			"en": "please input your group link",
-			"zh": "输入群组链接",
+			"zh": InputGroupLinkCN,
 		},
 		TopicChoosing: {
 			"en": "please choose the most relevant topic for your group",
@@ -42,9 +70,9 @@ var (
 			"en": "group topic invalid, please re-input",
 			"zh": "话题输入非法, 请重新输入",
 		},
-		TagsInputting: {
+		InputTags: {
 			"en": "please input your group tags, separated by space",
-			"zh": "输入群组标签, 以便于群组被更容易的搜索到",
+			"zh": InputTagsCN,
 		},
 		IndexFailed: {
 			"en": "index failed, please try again later",
@@ -52,7 +80,7 @@ var (
 		},
 		IndexSuccess: {
 			"en": "%s has been indexed",
-			"zh": "已收录 %s",
+			"zh": IndexSuccessCN,
 		},
 	}
 
