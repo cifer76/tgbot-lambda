@@ -71,6 +71,7 @@ func addCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandS
 
 	defer func() {
 		msg := tgbotapi.NewMessage(chatID, content)
+		msg.DisableWebPagePreview = true
 		_, err := bot.Send(msg)
 		if err != nil {
 			log.Println(err)
