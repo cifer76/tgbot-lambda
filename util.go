@@ -33,9 +33,9 @@ func formatMemberCount(count int) string {
 	if count < 1000 {
 		memberCount = fmt.Sprintf("%d", count)
 	} else if count < 1000000 {
-		memberCount = fmt.Sprintf("%2f K", float64(count)/1000.0)
+		memberCount = fmt.Sprintf("%.1fk", float64(count)/1000.0)
 	} else {
-		memberCount = fmt.Sprintf("%2f M", float64(count)/1000000.0)
+		memberCount = fmt.Sprintf("%.1fm", float64(count)/1000000.0)
 	}
 	return memberCount
 }
