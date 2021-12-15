@@ -7,8 +7,9 @@ import (
 type GroupInfo struct {
 	tgbotapi.Chat
 
-	Category string   `json:"category"` // group category specified by the requestor
-	Tags     []string `json:"tags"`     // group tags specified by the requestor
+	MemberCount int      `json:"memberCount"`
+	Category    string   `json:"category"` // group category specified by the requestor
+	Tags        []string `json:"tags"`     // group tags specified by the requestor
 }
 
 // state
@@ -27,6 +28,7 @@ type GroupRecord struct {
 	Title       string
 	Type        string
 	Description string
+	MemberCount int
 	Category    string   `json:"category"` // group category specified by the requestor
 	Tags        []string `json:"tags"`     // group tags specified by the requestor
 }

@@ -118,7 +118,7 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	}
 
 	rsp = `
-Found the following results:
+找到如下结果:
 
 `
 
@@ -127,7 +127,8 @@ Found the following results:
 		if g.Type == "channel" {
 			icon = "📢"
 		}
-		line := fmt.Sprintf("%d. %s <a href=\"https://t.me/%s\">%s</a> <pre>%s</pre>\n", i+1, icon, g.Username, g.Title, g.Description)
+
+		line := fmt.Sprintf("%d. %s <a href=\"https://t.me/%s\">%s</a> (%s) <pre>%s</pre>\n", i+1, icon, g.Username, g.Title, formatMemberCount(g.MemberCount), g.Description)
 		rsp += line
 	}
 	return

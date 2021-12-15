@@ -97,16 +97,28 @@ func addCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandS
 				return
 			}
 		}
+
+		chatConfig := tgbotapi.ChatConfig{
+			// must be proceeded with @, refer to: https://core.telegram.org/bots/api#getchat
+			SuperGroupUsername: "@" + groupUsername,
+		}
+
 		// query group info
-		chat, err := bot.GetChat(tgbotapi.ChatConfig{
-			SuperGroupUsername: "@" + groupUsername, // must be proceeded with @, refer to: https://core.telegram.org/bots/api#getchat
-		})
+		chat, err := bot.GetChat(chatConfig)
 		if err != nil {
 			log.Printf("getChat for %s error: %v\n", groupUsername, err)
 			content = getLocalizedText(ctx, GroupNotFound)
 			return
 		}
+
+		// get chat member count
+		count, err := bot.GetChatMembersCount(chatConfig)
+		if err != nil {
+			log.Printf("getChatMembersCount for %s error: %v\n", groupUsername, err)
+		}
+
 		s.Chat = chat
+		s.MemberCount = count
 		s.Stage = GroupTagsReceived
 		content = getLocalizedText(ctx, InputTags)
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\ndescription: %s\n",
