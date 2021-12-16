@@ -90,19 +90,16 @@ Input any keyword to search for the related groups.
 
 or choose a command following suit your needs:
 
-/start     - show this information
-/index     - index/re-index a group
-/list      - list groups by categories
-/recommend - recommend some groups
+/start     - start using / show this help info
+/add       - index group
         `,
 		"zh": `
 你可以直接输入关键词来查找相应的群组.
 
 或者使用如下命令完成不同的操作:
 
-/start     - 展示这个操作指引
-/index     - 索引某个群组(或频道)
-/list      - 列出所有群组
+/start     - 开始使用
+/add       - 添加群组
 /recommend - (🔥 推广) 随机推荐一些群组
         `,
 	}
