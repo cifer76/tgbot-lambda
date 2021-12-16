@@ -104,8 +104,8 @@ func getGroupInfo(ctx context.Context, groupUsername string) (tgbotapi.Chat, int
 
 func getGroupTags(ctx context.Context, title, description string) []string {
 	// get tags using gojieba
-	tags := jieba.CutAll(title)
-	tags = append(tags, jieba.CutAll(description)...)
+	tags := jieba.CutForSearch(title, true)
+	tags = append(tags, jieba.CutForSearch(description, true)...)
 
 	// de-duplication
 	dedup := map[string]bool{}
@@ -176,9 +176,10 @@ func addCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandS
 		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\nmemberCount: %d\ndescription: %s\n", s.Chat.ID, s.Chat.Title, s.Chat.Type, s.MemberCount, s.Chat.Description)
 
 		s.Tags = getGroupTags(ctx, s.Chat.Title, s.Chat.Description)
+		s.Stage = Done
+
 		go ddbWriteGroup(ctx, s)
 
-		s.Stage = Done
 		content = fmt.Sprintf(getLocalizedText(ctx, IndexSuccess), s.Title, s.Description, s.Tags, time.Now().Format("2006/01/02 15:04:05"))
 	default:
 	}
