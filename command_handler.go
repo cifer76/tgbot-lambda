@@ -121,15 +121,16 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 	// do some validation of the tags
 	filtered = []string{}
 	for _, t := range tags {
-		if patternGroupTag.MatchString(t) {
+		// tags less than 2 character and not match regex won't be counted
+		if len([]rune(t)) > 1 && patternGroupTag.MatchString(t) {
 			filtered = append(filtered, t)
 		}
 	}
 	tags = filtered
 
-	// support up to 5 tags for each group
-	if len(tags) > 5 {
-		tags = tags[:5]
+	// support up to 10 tags for each group
+	if len(tags) > 10 {
+		tags = tags[:10]
 	}
 	return tags
 }
