@@ -30,7 +30,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: build binary
         run: |
-          GOOS=linux go build -v -a -o tgbot && tar -jvf tgbot.tar.bz2 tgbot dict/
+          GOOS=linux go build -v -a -o tgbot && tar -jcvf tgbot.tar.bz2 tgbot dict/
       - name: deploy
         uses: easingthemes/ssh-deploy@main
         env:
