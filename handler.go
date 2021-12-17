@@ -163,5 +163,9 @@ func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 	}
 
 	// not command and no state, then it's the simplest case: keyword search
-	handleSearch(ctx, &update)
+	if update.Message != nil && update.Message.Text != "" {
+		handleSearch(ctx, &update)
+	} else {
+		fmt.Println("unsupported update")
+	}
 }
