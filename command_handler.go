@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cifer76/gojieba"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/yanyiwu/gojieba"
 )
 
 type CommandHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState)
