@@ -44,5 +44,5 @@ jobs:
         run: |
           echo "${{ secrets.EC2_DEPLOY_PRIVATE_KEY }}" > /tmp/key
           chmod 0600 /tmp/key
-          ssh -i /tmp/key ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "tar -jxf tgbot.tar.bz2"
+          ssh -i /tmp/key ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "tar -jxf /home/ubuntu/tgbot/tgbot.tar.bz2"
           ssh -i /tmp/key ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "sudo systemctl restart tgbot"
