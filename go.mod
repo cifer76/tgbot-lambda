@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.10.0
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.4.1
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.8.0
-	github.com/cifer76/gojieba v1.1.3
+	github.com/cifer76/gojieba v1.1.5
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible
