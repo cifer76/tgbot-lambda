@@ -17,6 +17,7 @@ func main() {
 	if botToken == "" {
 		log.Fatalln("environment BOT_TOKEN empty!")
 	}
+	botDebug := os.Getenv("BOT_DEBUG")
 	// we don't use the NewBotAPI() method because it always makes a getMe
 	// call for verification, we are sure that the bot token is correct so
 	// we don't need this procedure
@@ -24,6 +25,7 @@ func main() {
 		Token:  botToken,
 		Client: &http.Client{},
 		Buffer: 100,
+		Debug:  botDebug == "true",
 	}
 
 	u := tgbotapi.NewUpdate(-1)

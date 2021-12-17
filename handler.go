@@ -20,6 +20,10 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 
 	var rsp string
 	defer func() {
+		if rsp == "" {
+			return
+		}
+
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, rsp)
 		msg.ParseMode = tgbotapi.ModeHTML
 		msg.DisableWebPagePreview = true
@@ -53,7 +57,6 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	})
 	if err != nil {
 		log.Printf("error during batch get tags, err %v\n", err)
-		rsp = "An error occurred, empty result"
 		return
 	}
 
@@ -61,7 +64,6 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	err = attributevalue.UnmarshalListOfMaps(out.Responses["tags"], &recs)
 	if err != nil {
 		log.Printf("error during unmarshal tags, err %v\n", err)
-		rsp = "An error occurred, empty result"
 		return
 	}
 
@@ -91,7 +93,6 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	}
 
 	if len(keys) < 1 {
-		rsp = "no results found"
 		return
 	}
 
@@ -105,7 +106,6 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	})
 	if err != nil {
 		log.Printf("error during batch get groups, err %v\n", err)
-		rsp = "An error occurred, empty result"
 		return
 	}
 
@@ -113,7 +113,6 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	err = attributevalue.UnmarshalListOfMaps(out.Responses["groups"], &groups)
 	if err != nil {
 		log.Printf("error during unmarshal groups, err %v\n", err)
-		rsp = "An error occurred, empty result"
 		return
 	}
 
