@@ -54,3 +54,5 @@
 2. Lambda is unable to call dynamoDB due to the lack of permissions
 
    Follow [this](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_lambda-access-dynamodb.html) to grant permissions to lambda.
+
+3. CloudWatch configuration: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-commandline-fleet.html

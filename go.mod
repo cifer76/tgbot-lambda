@@ -9,9 +9,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.8.0
 	github.com/cifer76/gojieba v1.1.5
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

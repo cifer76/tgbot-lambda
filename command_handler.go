@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/cifer76/gojieba"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type CommandHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState)
