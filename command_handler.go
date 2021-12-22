@@ -118,6 +118,19 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 	}
 	tags = filtered
 
+	// filter out non-noun words
+	filtered = []string{}
+	for _, t := range tags {
+		r := jieba.Tag(t)
+		prop := strings.Split(r[0], "/")
+		// keep only noun words
+		// refer to https://gist.github.com/hscspring/c985355e0814f01437eaf8fd55fd7998
+		if strings.HasPrefix(prop[1], "n") || strings.HasPrefix(prop[1], "i") || strings.HasPrefix(prop[1], "q") {
+			filtered = append(filtered, t)
+		}
+	}
+	tags = filtered
+
 	// do some validation of the tags
 	filtered = []string{}
 	for _, t := range tags {

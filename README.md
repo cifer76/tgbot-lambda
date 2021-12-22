@@ -5,6 +5,7 @@
 [x] Support searching for groups by keyword
 [x] group groups by tags and categories
 [x] record the number of group members or subscribers
+[x] keep only noun tags
 [ ] rate the group periodically, then sort them during search recalling
 
 # Set up webhook
