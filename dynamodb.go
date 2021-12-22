@@ -16,6 +16,29 @@ import (
 
 var dynsvc *dynamodb.Client
 
+func ddbWriteUser(ctx context.Context, u UserRecord) {
+	// write user info
+	_, err := dynsvc.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String("users"),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberN{Value: strconv.FormatInt(u.ID, 10)},
+		},
+		ReturnValues:     types.ReturnValueUpdatedOld,
+		UpdateExpression: aws.String("set username = :username, first_name = :first_name, last_name = :last_name, update_at = :update_at, created_at = if_not_exists(created_at, :created_at)"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":username":   &types.AttributeValueMemberS{Value: u.Username},
+			":first_name": &types.AttributeValueMemberS{Value: u.FirstName},
+			":last_name":  &types.AttributeValueMemberS{Value: u.LastName},
+			":created_at": &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
+			":update_at":  &types.AttributeValueMemberN{Value: strconv.FormatInt(time.Now().Unix(), 10)},
+		},
+	})
+	if err != nil {
+		log.Printf("record user %d error: %v\n", u.ID, err)
+		return
+	}
+}
+
 func ddbWriteGroup(ctx context.Context, s *CommandState) {
 	// write group info
 	updatedOldValues, err := dynsvc.UpdateItem(ctx, &dynamodb.UpdateItemInput{

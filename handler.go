@@ -133,8 +133,25 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	return
 }
 
+func handleNewUserChat(ctx context.Context, update *tgbotapi.Update) {
+	tguser := update.MyChatMember.From
+	userRecord := UserRecord{
+		ID:        tguser.ID,
+		Username:  tguser.UserName,
+		FirstName: tguser.FirstName,
+		LastName:  tguser.LastName,
+	}
+	ddbWriteUser(ctx, userRecord)
+}
+
 func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 	log.Printf("TG Update: %+v\n", update)
+
+	// new user started with the bot
+	if determineUpdateType(ctx, &update) == UpdateType_UserUnblockBot {
+		handleNewUserChat(ctx, &update)
+		return
+	}
 
 	var chatID int64
 	if chatID = getChatIDFromUpdate(&update); chatID == 0 {

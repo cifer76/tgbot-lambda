@@ -1,3 +1,4 @@
+// data structures related with storing in dynamodb
 package main
 
 import (
@@ -37,4 +38,13 @@ type GroupRecord struct {
 type TagRecord struct {
 	Tag    string
 	Groups []string
+}
+
+// User Record
+type UserRecord struct {
+	ID           int64
+	Username     string
+	FirstName    string
+	LastName     string
+	LanguageCode string
 }

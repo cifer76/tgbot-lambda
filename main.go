@@ -30,7 +30,7 @@ func main() {
 
 	u := tgbotapi.NewUpdate(-1)
 	u.Timeout = 60
-	updates, _ := bot.GetUpdatesChan(u)
+	updates := bot.GetUpdatesChan(u)
 
 	for u := range updates {
 		handleUpdate(context.Background(), u)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -38,4 +39,49 @@ func formatMemberCount(count int) string {
 		memberCount = fmt.Sprintf("%.1fm", float64(count)/1000000.0)
 	}
 	return memberCount
+}
+
+const (
+	UpdateType_TextMessage = iota
+	UpdateType_CommandMessage
+	UpdateType_UserBlockBot   // user stop the bot
+	UpdateType_UserUnblockBot // user start or restart the bot
+	UpdateType_GroupAddedBot
+	UpdateType_GroupRemovedBot
+)
+
+func determineUpdateType(ctx context.Context, update *tgbotapi.Update) int {
+	if update.MyChatMember != nil {
+		status := update.MyChatMember.NewChatMember.Status
+		if update.MyChatMember.Chat.ID > 0 { // private chats
+			if status == "member" {
+				return UpdateType_UserUnblockBot
+			} else if status == "kicked" {
+				return UpdateType_UserBlockBot
+			}
+		} else { // supergroup chats
+			if status == "member" {
+				return UpdateType_GroupAddedBot
+			} else if status == "left" {
+				return UpdateType_GroupRemovedBot
+			}
+		}
+		return -1
+	} else if update.Message != nil {
+		if update.Message.Text != "" {
+			if updateIsCommand(update) {
+				return UpdateType_CommandMessage
+			} else {
+				return UpdateType_TextMessage
+			}
+		}
+
+		if update.Message.NewChatMembers != nil {
+			// TODO
+			// update.Message.NewChatMembers[0] == "myself"?
+			return -1
+		}
+
+	}
+	return -1
 }

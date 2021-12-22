@@ -87,14 +87,18 @@ func getGroupInfo(ctx context.Context, groupUsername string) (tgbotapi.Chat, int
 	}
 
 	// query group info
-	chat, err := bot.GetChat(chatConfig)
+	chat, err := bot.GetChat(tgbotapi.ChatInfoConfig{
+		ChatConfig: chatConfig,
+	})
 	if err != nil {
 		log.Printf("getChat for %s error: %v\n", groupUsername, err)
 		return chat, 0, fmt.Errorf("GroupNotFound")
 	}
 
 	// get chat member count
-	count, err := bot.GetChatMembersCount(chatConfig)
+	count, err := bot.GetChatMembersCount(tgbotapi.ChatMemberCountConfig{
+		ChatConfig: chatConfig,
+	})
 	if err != nil {
 		log.Printf("getChatMembersCount for %s error: %v\n", groupUsername, err)
 	}
