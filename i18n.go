@@ -100,7 +100,6 @@ or choose a command following suit your needs:
 
 /start     - 开始使用
 /add       - 添加群组
-/recommend - (🔥 推广) 随机推荐一些群组
         `,
 	}
 )
