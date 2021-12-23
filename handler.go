@@ -149,6 +149,11 @@ func handleNewGroupChat(ctx context.Context, update *tgbotapi.Update) {
 
 	fmt.Printf("bot was added to a new group, groupID: %v, groupTitle: %v, groupUsername: %v, groupType: %v\n", groupChat.ID, groupChat.Title, groupChat.UserName, groupChat.Type)
 
+	if groupChat.UserName == "" {
+		fmt.Printf("group username is empty, not support indexing private group\n")
+		return
+	}
+
 	groupChat, memberCount, err := getGroupInfo(ctx, groupChat.UserName)
 	if err != nil {
 		fmt.Printf("get group info failed, error: %v", err)
