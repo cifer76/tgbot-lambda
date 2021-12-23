@@ -195,7 +195,7 @@ func addCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandS
 		s.Tags = getGroupTags(ctx, s.Chat.Title, s.Chat.Description)
 		s.Stage = Done
 
-		go ddbWriteGroup(ctx, s)
+		go ddbWriteGroup(ctx, s.GroupInfo)
 
 		content = fmt.Sprintf(getLocalizedText(ctx, IndexSuccess), s.Title, s.Description, s.Tags, time.Now().Format("2006/01/02 15:04:05"))
 	default:

@@ -6,7 +6,7 @@
 [x] group groups by tags and categories
 [x] record the number of group members or subscribers
 [x] keep only noun tags
-[ ] support indexing the group when the bot is added into it
+[x] support indexing the group when the bot is added into it
 [ ] rate the group periodically, then sort them during search recalling
 
 # Set up webhook

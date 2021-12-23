@@ -144,12 +144,40 @@ func handleNewUserChat(ctx context.Context, update *tgbotapi.Update) {
 	ddbWriteUser(ctx, userRecord)
 }
 
+func handleNewGroupChat(ctx context.Context, update *tgbotapi.Update) {
+	groupChat := update.MyChatMember.Chat
+
+	fmt.Printf("bot was added to a new group, groupID: %v, groupTitle: %v, groupUsername: %v, groupType: %v\n", groupChat.ID, groupChat.Title, groupChat.UserName, groupChat.Type)
+
+	groupChat, memberCount, err := getGroupInfo(ctx, groupChat.UserName)
+	if err != nil {
+		fmt.Printf("get group info failed, error: %v", err)
+		return
+	}
+	log.Printf("group description: %s\n", groupChat.Description)
+
+	tags := getGroupTags(ctx, groupChat.Title, groupChat.Description)
+	groupInfo := GroupInfo{
+		Chat:        groupChat,
+		MemberCount: memberCount,
+		Tags:        tags,
+	}
+
+	ddbWriteGroup(ctx, groupInfo)
+}
+
 func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 	log.Printf("TG Update: %+v\n", update)
 
 	// new user started with the bot
-	if determineUpdateType(ctx, &update) == UpdateType_UserUnblockBot {
+	if determineUpdateType(ctx, &update) == UpdateType_UserUnblockedBot {
 		handleNewUserChat(ctx, &update)
+		return
+	}
+
+	// the bot is added into a new group
+	if determineUpdateType(ctx, &update) == UpdateType_GroupAddedBot {
+		handleNewGroupChat(ctx, &update)
 		return
 	}
 

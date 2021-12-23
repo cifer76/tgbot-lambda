@@ -39,7 +39,7 @@ func ddbWriteUser(ctx context.Context, u UserRecord) {
 	}
 }
 
-func ddbWriteGroup(ctx context.Context, s *CommandState) {
+func ddbWriteGroup(ctx context.Context, s GroupInfo) {
 	// write group info
 	updatedOldValues, err := dynsvc.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String("groups"),
