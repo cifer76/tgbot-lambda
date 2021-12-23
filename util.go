@@ -44,8 +44,8 @@ func formatMemberCount(count int) string {
 const (
 	UpdateType_TextMessage = iota
 	UpdateType_CommandMessage
-	UpdateType_UserBlockBot   // user stop the bot
-	UpdateType_UserUnblockBot // user start or restart the bot
+	UpdateType_UserBlockedBot   // user stop the bot
+	UpdateType_UserUnblockedBot // user start or restart the bot
 	UpdateType_GroupAddedBot
 	UpdateType_GroupRemovedBot
 )
@@ -55,9 +55,9 @@ func determineUpdateType(ctx context.Context, update *tgbotapi.Update) int {
 		status := update.MyChatMember.NewChatMember.Status
 		if update.MyChatMember.Chat.ID > 0 { // private chats
 			if status == "member" {
-				return UpdateType_UserUnblockBot
+				return UpdateType_UserUnblockedBot
 			} else if status == "kicked" {
-				return UpdateType_UserBlockBot
+				return UpdateType_UserBlockedBot
 			}
 		} else { // supergroup chats
 			if status == "member" {
