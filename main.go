@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -18,15 +17,13 @@ func main() {
 		log.Fatalln("environment BOT_TOKEN empty!")
 	}
 	botDebug := os.Getenv("BOT_DEBUG")
-	// we don't use the NewBotAPI() method because it always makes a getMe
-	// call for verification, we are sure that the bot token is correct so
-	// we don't need this procedure
-	bot = &tgbotapi.BotAPI{
-		Token:  botToken,
-		Client: &http.Client{},
-		Buffer: 100,
-		Debug:  botDebug == "true",
+
+	var err error
+	bot, err = tgbotapi.NewBotAPI(botToken)
+	if err != nil {
+		log.Panic(err)
 	}
+	bot.Debug = botDebug == "true"
 
 	u := tgbotapi.NewUpdate(-1)
 	u.Timeout = 60
