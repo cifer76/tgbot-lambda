@@ -10,6 +10,7 @@ import (
 
 	"github.com/cifer76/gojieba"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jdkato/prose/v2"
 )
 
 type CommandHandler func(ctx context.Context, update *tgbotapi.Update, state *CommandState)
@@ -145,10 +146,44 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 	}
 	tags = filtered
 
-	// support up to 10 tags for each group
-	if len(tags) > 10 {
-		tags = tags[:10]
+	// support up to 20 Chinese tags for each group
+	if len(tags) > 20 {
+		tags = tags[:20]
 	}
+
+	tagsEng := getGroupTagsEng(ctx, title, description)
+	// support up to 20 Chinese tags for each group
+	if len(tagsEng) > 20 {
+		tagsEng = tagsEng[:20]
+	}
+
+	tags = append(tags, tagsEng...)
+
+	return tags
+}
+
+func getGroupTagsEng(ctx context.Context, title, description string) []string {
+	// Create a new document with the default configuration:
+	doc, err := prose.NewDocument(title + " " + description)
+	if err != nil {
+		log.Println(err)
+		return []string{}
+	}
+
+	// Iterate over the doc's tokens:
+	tags := []string{}
+	for _, tok := range doc.Tokens() {
+		if strings.HasPrefix(tok.Tag, "NN") {
+			tags = append(tags, tok.Text)
+		}
+	}
+
+	// Iterate over the doc's named-entities:
+	for _, ent := range doc.Entities() {
+		tags = append(tags, ent.Text)
+		// fmt.Println(ent.Text, ent.Label)
+	}
+
 	return tags
 }
 
