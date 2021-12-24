@@ -40,7 +40,7 @@ func formatMemberCount(count int) string {
 	}
 
 	for i := len(memberCount); i < 4; i++ {
-		memberCount = "&nbsp;" + memberCount
+		memberCount = " " + memberCount
 	}
 
 	return memberCount
