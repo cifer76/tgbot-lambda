@@ -38,6 +38,11 @@ func formatMemberCount(count int) string {
 	} else {
 		memberCount = fmt.Sprintf("%.1fm", float64(count)/1000000.0)
 	}
+
+	for i := len(memberCount); i < 4; i++ {
+		memberCount = "&nbsp;" + memberCount
+	}
+
 	return memberCount
 }
 

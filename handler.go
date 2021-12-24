@@ -126,8 +126,7 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 		if g.Type == "channel" {
 			icon = "📢"
 		}
-
-		line := fmt.Sprintf("%d. %s <a href=\"https://t.me/%s\">%s</a> (%s)\n", i+1, icon, g.Username, g.Title, formatMemberCount(g.MemberCount))
+		line := fmt.Sprintf("%d. %s %s - <a href=\"https://t.me/%s\">%s</a>\n", i+1, icon, formatMemberCount(g.MemberCount), g.Username, g.Title)
 		rsp += line
 	}
 	return
