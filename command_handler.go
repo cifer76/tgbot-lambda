@@ -264,7 +264,7 @@ func getCommandHandler(command string) CommandHandler {
 
 func init() {
 	patternGroupUsername = regexp.MustCompile("^[a-zA-Z]+[0-9_a-zA-Z]+$")
-	patternGroupTag = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
+	patternGroupTag = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9._]+$")
 	patternGroupCategory = regexp.MustCompile("^[\u4e00-\u9fa5a-zA-Z0-9]+$")
 	jieba = gojieba.NewJieba()
 }
