@@ -112,19 +112,8 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 	tags := jieba.CutForSearch(title, true)
 	tags = append(tags, jieba.CutForSearch(description, true)...)
 
-	// de-duplication
-	dedup := map[string]bool{}
-	filtered := []string{}
-	for _, t := range tags {
-		if !dedup[t] {
-			dedup[t] = true
-			filtered = append(filtered, t)
-		}
-	}
-	tags = filtered
-
 	// filter out non-noun words
-	filtered = []string{}
+	filtered := []string{}
 	for _, t := range tags {
 		r := jieba.Tag(t)
 		prop := strings.Split(r[0], "/")
@@ -158,6 +147,17 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 	}
 
 	tags = append(tags, tagsEng...)
+
+	// de-duplication
+	dedup := map[string]bool{}
+	filtered = []string{}
+	for _, t := range tags {
+		if !dedup[t] {
+			dedup[t] = true
+			filtered = append(filtered, t)
+		}
+	}
+	tags = filtered
 
 	return tags
 }
