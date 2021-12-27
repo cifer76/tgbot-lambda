@@ -9,6 +9,7 @@
 [x] support indexing the group when the bot is added into it
 [x] support english tokenizing & segmenting
 [x] why sometimes the bot doesn't receive my_chat_member message when a new user starts it?
+[x] sort search result by members count
 [ ] rate the group periodically, then sort them during search recalling
 
 # Set up webhook

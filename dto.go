@@ -34,6 +34,13 @@ type GroupRecord struct {
 	Tags        []string `json:"tags"`     // group tags specified by the requestor
 }
 
+// GroupRecords implements sort.Interface based on the MemberCount field.
+type GroupRecords []GroupRecord
+
+func (a GroupRecords) Len() int           { return len(a) }
+func (a GroupRecords) Less(i, j int) bool { return a[i].MemberCount < a[j].MemberCount }
+func (a GroupRecords) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+
 // Tag Record
 type TagRecord struct {
 	Tag    string

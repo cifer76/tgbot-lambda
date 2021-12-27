@@ -116,6 +116,8 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 		return
 	}
 
+	sort.Sort(GroupRecords(groups))
+
 	rsp = `
 找到如下结果:
 
