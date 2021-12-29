@@ -270,6 +270,18 @@ func startCommandHandler(ctx context.Context, update *tgbotapi.Update, s *Comman
 		return
 	}
 
+	// if the user explictly send a /start command, record the user
+	if updateIsCommand(update) && update.Message.Command() == "start" {
+		tguser := update.Message.From
+		userRecord := UserRecord{
+			ID:        tguser.ID,
+			Username:  tguser.UserName,
+			FirstName: tguser.FirstName,
+			LastName:  tguser.LastName,
+		}
+		go ddbWriteUser(ctx, userRecord)
+	}
+
 	chatID := update.Message.Chat.ID
 	content := getStartContent(ctx)
 	_, err := bot.Send(tgbotapi.NewMessage(chatID, content))
