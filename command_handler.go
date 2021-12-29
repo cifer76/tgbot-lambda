@@ -199,7 +199,6 @@ func getGroupTagsEng(ctx context.Context, title, description string) []string {
 	// Iterate over the doc's tokens:
 	tags = []string{}
 	for _, tok := range doc.Tokens() {
-		fmt.Println(tok)
 		if strings.HasPrefix(tok.Tag, "NN") {
 			tags = append(tags, tok.Text)
 		}
