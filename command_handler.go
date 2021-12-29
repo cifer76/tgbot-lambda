@@ -107,10 +107,10 @@ func getGroupInfo(ctx context.Context, groupUsername string) (tgbotapi.Chat, int
 	return chat, count, nil
 }
 
-func getGroupTags(ctx context.Context, title, description string) []string {
+func getGroupTagsCN(ctx context.Context, title, desc string) []string {
 	// get tags using gojieba
 	tags := jieba.CutForSearch(title, true)
-	tags = append(tags, jieba.CutForSearch(description, true)...)
+	tags = append(tags, jieba.CutForSearch(desc, true)...)
 
 	// filter out non-noun words
 	filtered := []string{}
@@ -126,15 +126,22 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 	tags = filtered
 
 	// do some validation of the tags
-	filtered = []string{}
-	for _, t := range tags {
-		// tags less than 2 character and not match regex won't be counted
-		if len([]rune(t)) > 1 && patternGroupTag.MatchString(t) {
-			filtered = append(filtered, t)
+	/*
+		filtered = []string{}
+		for _, t := range tags {
+			// tags less than 2 character and not match regex won't be counted
+			if len([]rune(t)) > 1 && patternGroupTag.MatchString(t) {
+				filtered = append(filtered, t)
+			}
 		}
-	}
-	tags = filtered
+		tags = filtered
+	*/
 
+	return tags
+}
+
+func getGroupTags(ctx context.Context, title, description string) []string {
+	tags := getGroupTagsCN(ctx, title, description)
 	// support up to 20 Chinese tags for each group
 	if len(tags) > 20 {
 		tags = tags[:20]
@@ -150,7 +157,7 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 
 	// de-duplication
 	dedup := map[string]bool{}
-	filtered = []string{}
+	filtered := []string{}
 	for _, t := range tags {
 		if !dedup[t] {
 			dedup[t] = true
@@ -163,16 +170,36 @@ func getGroupTags(ctx context.Context, title, description string) []string {
 }
 
 func getGroupTagsEng(ctx context.Context, title, description string) []string {
+	// get the english words using jieba
+	tags := jieba.CutForSearch(title, true)
+	tags = append(tags, jieba.CutForSearch(description, true)...)
+	// filter out non-english words
+	docstring := ""
+	for _, t := range tags {
+		r := jieba.Tag(t)
+		prop := strings.Split(r[0], "/")
+		// refer to https://gist.github.com/hscspring/c985355e0814f01437eaf8fd55fd7998
+		if prop[1] == "eng" {
+			docstring += " "
+			docstring += t
+		}
+	}
+
+	if docstring == "" {
+		return []string{}
+	}
+
 	// Create a new document with the default configuration:
-	doc, err := prose.NewDocument(title + " " + description)
+	doc, err := prose.NewDocument(docstring)
 	if err != nil {
 		log.Println(err)
 		return []string{}
 	}
 
 	// Iterate over the doc's tokens:
-	tags := []string{}
+	tags = []string{}
 	for _, tok := range doc.Tokens() {
+		fmt.Println(tok)
 		if strings.HasPrefix(tok.Tag, "NN") {
 			tags = append(tags, tok.Text)
 		}

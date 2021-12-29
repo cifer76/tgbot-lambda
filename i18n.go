@@ -98,7 +98,7 @@ or choose a command following suit your needs:
 
 TeleEye 机器人提供两种方式收录你的群组
 
-1. 直接将机器人添加为你的群组成员()
+1. 直接将机器人添加为你的群组成员
 2. 在机器人对话框使用 /add 命令
 
 搜索群组:
