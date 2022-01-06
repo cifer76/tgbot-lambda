@@ -251,12 +251,23 @@ func addCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandS
 			content = getLocalizedText(ctx, GroupNotFound)
 			return
 		}
-		log.Printf("Group info:\nID: %v\nname: %s\ntype: %s\nmemberCount: %d\ndescription: %s\n", s.Chat.ID, s.Chat.Title, s.Chat.Type, s.MemberCount, s.Chat.Description)
+		fmt.Printf("New group, ID: %v, name: %s, type: %s, memberCount: %d, description: %s\n", s.Chat.ID, s.Chat.Title, s.Chat.Type, s.MemberCount, s.Chat.Description)
 
 		s.Tags = getGroupTags(ctx, s.Chat.Title, s.Chat.Description)
 		s.Stage = Done
 
 		go ddbWriteGroup(ctx, s.GroupInfo)
+		go func() {
+			r := GroupRecord{
+				Username:    s.UserName,
+				ChatID:      s.ChatID,
+				Title:       s.Title,
+				Type:        s.Type,
+				Description: s.Description,
+				MemberCount: s.MemberCount,
+			}
+			opensearchWriteGroup(ctx, r)
+		}()
 
 		content = fmt.Sprintf(getLocalizedText(ctx, IndexSuccess), s.Title, s.Description, s.Tags, time.Now().Format("2006/01/02 15:04:05"))
 	default:

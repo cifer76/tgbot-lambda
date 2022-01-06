@@ -25,11 +25,11 @@ type CommandState struct {
 // Group Record
 type GroupRecord struct {
 	Username    string
-	ChatID      int64 `dynamodbav:"chat_id"`
+	ChatID      int64 `json:"chat_id" dynamodbav:"chat_id"`
 	Title       string
 	Type        string
 	Description string
-	MemberCount int      `dynamodbav:"member_count"`
+	MemberCount int      `json:"member_count" dynamodbav:"member_count"`
 	Category    string   `json:"category"` // group category specified by the requestor
 	Tags        []string `json:"tags"`     // group tags specified by the requestor
 }

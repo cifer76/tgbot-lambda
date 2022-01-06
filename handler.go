@@ -134,6 +134,49 @@ func handleSearch(ctx context.Context, update *tgbotapi.Update) {
 	return
 }
 
+func handleSearch2(ctx context.Context, update *tgbotapi.Update) {
+	tokens := strings.Fields(update.Message.Text)
+
+	var rsp string
+	defer func() {
+		if rsp == "" {
+			return
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, rsp)
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.DisableWebPagePreview = true
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	keywords := []string{}
+	for _, t := range tokens {
+		if patternGroupTag.MatchString(t) {
+			keywords = append(keywords, t)
+		}
+	}
+
+	groups := opensearchSearchGroup(ctx, keywords)
+
+	rsp = `
+找到如下结果:
+
+`
+
+	for i, g := range groups {
+		icon := "👥"
+		if g.Type == "channel" {
+			icon = "📢"
+		}
+		line := fmt.Sprintf("%d. %s %s - <a href=\"https://t.me/%s\">%s</a>\n", i+1, icon, formatMemberCount(g.MemberCount), g.Username, g.Title)
+		rsp += line
+	}
+	return
+}
+
 func handleNewUserChat(ctx context.Context, update *tgbotapi.Update) {
 	tguser := update.MyChatMember.From
 	userRecord := UserRecord{
@@ -215,7 +258,7 @@ func handleUpdate(ctx context.Context, update tgbotapi.Update) {
 
 	// not command and no state, then it's the simplest case: keyword search
 	if update.Message != nil && update.Message.Text != "" {
-		handleSearch(ctx, &update)
+		handleSearch2(ctx, &update)
 	} else {
 		fmt.Println("unsupported update")
 	}
