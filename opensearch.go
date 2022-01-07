@@ -68,6 +68,8 @@ func opensearchSearchGroup(ctx context.Context, keywords []string) []GroupRecord
 		return groups
 	}
 
+	fmt.Println(searchResponse.String())
+
 	resp := map[string]interface{}{}
 	_ = json.Unmarshal([]byte(searchResponse.String()), &resp)
 	for _, hit := range resp["hits"].(map[string]interface{})["hits"].([]interface{}) {
