@@ -79,7 +79,7 @@ func opensearchSearchGroup(ctx context.Context, keywords []string) []GroupRecord
 			Username:    r["username"].(string),
 			Type:        r["type"].(string),
 			Title:       r["title"].(string),
-			MemberCount: r["member_count"].(int),
+			MemberCount: int(r["member_count"].(float64)),
 		}
 		groups = append(groups, rec)
 	}
