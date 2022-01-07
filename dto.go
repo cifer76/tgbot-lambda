@@ -24,14 +24,12 @@ type CommandState struct {
 
 // Group Record
 type GroupRecord struct {
-	Username    string   `json:"username"`
-	ChatID      int64    `json:"chat_id" dynamodbav:"chat_id"`
-	Title       string   `json:"title"`
-	Type        string   `json:"type"`
-	Description string   `json:"description"`
-	MemberCount int      `json:"member_count" dynamodbav:"member_count"`
-	Category    string   `json:"category"` // group category specified by the requestor
-	Tags        []string `json:"tags"`     // group tags specified by the requestor
+	Username    string `json:"username"`
+	ChatID      int64  `json:"chat_id" dynamodbav:"chat_id"`
+	Title       string `json:"title"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	MemberCount int    `json:"member_count" dynamodbav:"member_count"`
 }
 
 // GroupRecords implements sort.Interface based on the MemberCount field.
