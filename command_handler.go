@@ -260,7 +260,7 @@ func addCommandHandler(ctx context.Context, update *tgbotapi.Update, s *CommandS
 		go func() {
 			r := GroupRecord{
 				Username:    s.UserName,
-				ChatID:      s.ChatID,
+				ChatID:      s.ID,
 				Title:       s.Title,
 				Type:        s.Type,
 				Description: s.Description,
