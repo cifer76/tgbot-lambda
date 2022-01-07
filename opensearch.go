@@ -61,17 +61,18 @@ func opensearchSearchGroup(ctx context.Context, keywords []string) []GroupRecord
 		fmt.Println("failed to search document ", err)
 		os.Exit(1)
 	}
-	fmt.Println(searchResponse)
 
 	groups := []GroupRecord{}
 	if searchResponse.IsError() {
 		return groups
 	}
 
-	fmt.Println(searchResponse.String())
-
 	resp := map[string]interface{}{}
-	_ = json.Unmarshal([]byte(searchResponse.String()), &resp)
+	if err := json.NewDecoder(searchResponse.Body).Decode(&resp); err != nil {
+		log.Println(searchResponse)
+		return groups
+	}
+
 	for _, hit := range resp["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		r := hit.(map[string]interface{})["_source"].(map[string]interface{})
 		rec := GroupRecord{
